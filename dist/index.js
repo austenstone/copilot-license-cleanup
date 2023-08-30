@@ -9641,6 +9641,7 @@ const github = __importStar(__nccwpck_require__(5438));
 function getInputs() {
     const result = {};
     result.token = core.getInput('github-token');
+    result.org = core.getInput('org');
     return result;
 }
 exports.getInputs = getInputs;
@@ -9651,7 +9652,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     let expectedSeats = 0, page = 0;
     do {
         const response = yield octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
-            org: "octodemo"
+            org: input.org
         });
         expectedSeats = response.data.total_seats;
         seats = seats.concat(response.data.seats);

@@ -3,11 +3,13 @@ import * as github from '@actions/github';
 
 interface Input {
   token: string;
+  org: string;
 }
 
 export function getInputs(): Input {
   const result = {} as Input;
   result.token = core.getInput('github-token');
+  result.org = core.getInput('org');
   return result;
 }
 
@@ -19,7 +21,7 @@ const run = async (): Promise<void> => {
   let expectedSeats = 0, page = 0;
   do {
     const response = await octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
-      org: "octodemo"
+      org: input.org
     });
     expectedSeats = response.data.total_seats;
     seats = seats.concat(response.data.seats);
