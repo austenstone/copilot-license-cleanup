@@ -9667,6 +9667,14 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         const diffDays = Math.ceil(diff / (1000 * 3600 * 24));
         return diffDays > 30;
     });
+    yield core.summary
+        .addHeading("Inactive Seats")
+        .addDetails("Total Seats", seats.length.toString())
+        .addDetails("Inactive Seats", inactiveSeats.length.toString())
+        .addTable([
+        [{ data: 'Login', header: true }, { data: 'Last Active', header: true }],
+        ...inactiveSeats.map(seat => [seat.user.login, seat.last_activity_at])
+    ]);
     console.log(inactiveSeats);
 });
 run();
