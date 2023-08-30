@@ -12,20 +12,40 @@ export function getInputs(): Input {
 }
 
 const run = async (): Promise<void> => {
-  try {
-    const input = getInputs();
-    const octokit = github.getOctokit(input.token);
+  const input = getInputs();
+  const octokit = github.getOctokit(input.token);
 
-    const seats = await octokit.paginate("GET /orgs/{org}/copilot/billing/seats", {
-      org: "octodemo",
+  let seats: any[] = [];
+  let expectedSeats = 0, page = 0;
+  do {
+    const response = await octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
+      org: "octodemo"
     });
+    expectedSeats = response.data.total_seats;
+    seats = seats.concat(response.data.seats);
+    page++;
+  } while (seats.length < expectedSeats);
+  console.log(seats);
 
-    console.log(seats);
-  } catch (error) {
-    core.startGroup(error instanceof Error ? error.message : JSON.stringify(error));
-    core.info(JSON.stringify(error, null, 2));
-    core.endGroup();
-  }
+  const now = new Date();
+  const inactiveSeats = seats.filter(seat => {
+    if (seat.last_activity_at === null) return true;
+    const lastActive = new Date(seat.last_activity_at);
+    const diff = now.getTime() - lastActive.getTime();
+    const diffDays = Math.ceil(diff / (1000 * 3600 * 24));
+    return diffDays > 30;
+  });
+
+  await core.summary
+    .addHeading("Inactive Seats")
+    .addDetails("Total Seats", seats.length.toString())
+    .addDetails("Inactive Seats", inactiveSeats.length.toString())
+    .addTable([
+      [{data: 'Login', header: true}, {data: 'Last Active', header: true}],
+      ...inactiveSeats.map(seat => [seat.user.login, seat.last_activity_at])
+    ])
+
+  console.log(inactiveSeats);
 };
 
 run();
