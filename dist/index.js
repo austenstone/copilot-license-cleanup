@@ -9641,7 +9641,7 @@ const github = __importStar(__nccwpck_require__(5438));
 function getInputs() {
     const result = {};
     result.token = core.getInput('github-token');
-    result.org = core.getInput('org');
+    result.org = core.getInput('organization');
     return result;
 }
 exports.getInputs = getInputs;

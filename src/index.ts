@@ -9,7 +9,7 @@ interface Input {
 export function getInputs(): Input {
   const result = {} as Input;
   result.token = core.getInput('github-token');
-  result.org = core.getInput('org');
+  result.org = core.getInput('organization');
   return result;
 }
 
