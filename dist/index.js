@@ -9673,7 +9673,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         .addDetails("Inactive Seats", inactiveSeats.length.toString())
         .addTable([
         [{ data: 'Login', header: true }, { data: 'Last Active', header: true }],
-        ...inactiveSeats.map(seat => [seat.user.login, seat.last_activity_at])
+        ...inactiveSeats.map(seat => [seat.assignee.login, seat.last_activity_at])
     ]);
     console.log(inactiveSeats);
 });
