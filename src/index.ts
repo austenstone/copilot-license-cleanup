@@ -14,17 +14,13 @@ export function getInputs(): Input {
 const run = async (): Promise<void> => {
   try {
     const input = getInputs();
-    const octokit: ReturnType<typeof github.getOctokit> = github.getOctokit(input.token);
+    const octokit = github.getOctokit(input.token);
 
-    const {
-      viewer: { login },
-    }: any = await octokit.graphql(`{ 
-      viewer { 
-        login
-      }
-    }`);
+    const seats = await octokit.paginate("GET /orgs/{org}/copilot/billing/seats", {
+      org: "octodemo",
+    });
 
-    core.info(`Hello, ${login}!`);
+    console.log(seats);
   } catch (error) {
     core.startGroup(error instanceof Error ? error.message : JSON.stringify(error));
     core.info(JSON.stringify(error, null, 2));
