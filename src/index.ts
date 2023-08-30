@@ -49,11 +49,11 @@ const run = async (): Promise<void> => {
       [
         '123',
         '456'
-      ]
-      // ...inactiveSeats.map(seat => [
-      //   seat.assignee.login,
-      //   seat.last_activity_at
-      // ])
+      ],
+      ...inactiveSeats.map(seat => [
+        seat.assignee.login || '????',
+        seat.last_activity_at || 'Never'
+      ])
     ])
 };
 

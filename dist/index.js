@@ -9679,7 +9679,11 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         [
             '123',
             '456'
-        ]
+        ],
+        ...inactiveSeats.map(seat => [
+            seat.assignee.login || '????',
+            seat.last_activity_at || 'Never'
+        ])
     ]);
 });
 run();
