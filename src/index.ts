@@ -27,20 +27,18 @@ const run = async (): Promise<void> => {
   } while (seats.length < expectedSeats);
 
   const now = new Date();
-  const inactiveSeats = seats.filter(seat => {
+  let inactiveSeats = seats.filter(seat => {
     if (seat.last_activity_at === null) return true;
     const lastActive = new Date(seat.last_activity_at);
     const diff = now.getTime() - lastActive.getTime();
     const diffDays = Math.ceil(diff / (1000 * 3600 * 24));
     return diffDays > 30;
-  });
-
-  console.log(inactiveSeats);
+  }).sort((a, b) => (a.last_activity_at === null ? -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()));
 
   await core.summary
     .addHeading("Inactive Seats")
-    .addDetails("Total Seats", seats.length.toString())
-    .addDetails("Inactive Seats", inactiveSeats.length.toString())
+    .addRaw(`Total Seats: ${seats.length.toString()}`)
+    .addRaw(`Inactive Seats: ${inactiveSeats.length.toString()}`)
     .addTable([
       [
         { data: 'Login', header: true },
