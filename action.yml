@@ -10,6 +10,9 @@ inputs:
     description: The GitHub token used to create an authenticated client
     default: ${{ github.token }}
     required: false
+  organization:
+    description: The organization to use for the action
+    required: true
 
 runs:
   using: "node16"
