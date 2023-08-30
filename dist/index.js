@@ -9657,7 +9657,6 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         seats = seats.concat(response.data.seats);
         page++;
     } while (seats.length < expectedSeats);
-    console.log(seats);
     const now = new Date();
     const inactiveSeats = seats.filter(seat => {
         if (seat.last_activity_at === null)
@@ -9667,15 +9666,21 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         const diffDays = Math.ceil(diff / (1000 * 3600 * 24));
         return diffDays > 30;
     });
+    console.log(inactiveSeats);
     yield core.summary
         .addHeading("Inactive Seats")
         .addDetails("Total Seats", seats.length.toString())
         .addDetails("Inactive Seats", inactiveSeats.length.toString())
         .addTable([
-        [{ data: 'Login', header: true }, { data: 'Last Active', header: true }],
-        ...inactiveSeats.map(seat => [seat.assignee.login, seat.last_activity_at])
+        [
+            { data: 'Login', header: true },
+            { data: 'Last Active', header: true }
+        ],
+        [
+            '123',
+            '456'
+        ]
     ]);
-    console.log(inactiveSeats);
 });
 run();
 

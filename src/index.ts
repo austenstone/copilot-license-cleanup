@@ -25,7 +25,6 @@ const run = async (): Promise<void> => {
     seats = seats.concat(response.data.seats);
     page++;
   } while (seats.length < expectedSeats);
-  console.log(seats);
 
   const now = new Date();
   const inactiveSeats = seats.filter(seat => {
@@ -36,16 +35,26 @@ const run = async (): Promise<void> => {
     return diffDays > 30;
   });
 
+  console.log(inactiveSeats);
+
   await core.summary
     .addHeading("Inactive Seats")
     .addDetails("Total Seats", seats.length.toString())
     .addDetails("Inactive Seats", inactiveSeats.length.toString())
     .addTable([
-      [{data: 'Login', header: true}, {data: 'Last Active', header: true}],
-      ...inactiveSeats.map(seat => [seat.assignee.login, seat.last_activity_at])
+      [
+        { data: 'Login', header: true },
+        { data: 'Last Active', header: true }
+      ],
+      [
+        '123',
+        '456'
+      ]
+      // ...inactiveSeats.map(seat => [
+      //   seat.assignee.login,
+      //   seat.last_activity_at
+      // ])
     ])
-
-  console.log(inactiveSeats);
 };
 
 run();
