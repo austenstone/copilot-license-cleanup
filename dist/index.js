@@ -9649,7 +9649,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     const input = getInputs();
     const octokit = github.getOctokit(input.token);
     let seats = [];
-    let expectedSeats = 0, page = 0;
+    let expectedSeats = 0, page = 1;
     do {
         const response = yield octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
             org: input.org
@@ -9669,8 +9669,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     }).sort((a, b) => (a.last_activity_at === null ? -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()));
     yield core.summary
         .addHeading("Inactive Seats")
-        .addRaw(`Total Seats: ${seats.length.toString()}`)
-        .addRaw(`Inactive Seats: ${inactiveSeats.length.toString()}`)
+        .addRaw(`Inactive Seats: ${inactiveSeats.length.toString()} / ${seats.length.toString()}\n`)
         .addTable([
         [
             { data: 'Login', header: true },

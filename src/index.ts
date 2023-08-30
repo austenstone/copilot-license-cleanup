@@ -18,7 +18,7 @@ const run = async (): Promise<void> => {
   const octokit = github.getOctokit(input.token);
 
   let seats: any[] = [];
-  let expectedSeats = 0, page = 0;
+  let expectedSeats = 0, page = 1;
   do {
     const response = await octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
       org: input.org
@@ -39,8 +39,7 @@ const run = async (): Promise<void> => {
 
   await core.summary
     .addHeading("Inactive Seats")
-    .addRaw(`Total Seats: ${seats.length.toString()}`)
-    .addRaw(`Inactive Seats: ${inactiveSeats.length.toString()}`)
+    .addRaw(`Inactive Seats: ${inactiveSeats.length.toString()} / ${seats.length.toString()}\n`)
     .addTable([
       [
         { data: 'Login', header: true },
