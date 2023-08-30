@@ -9676,15 +9676,13 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             { data: 'Login', header: true },
             { data: 'Last Active', header: true }
         ],
-        [
-            '123',
-            '456'
-        ],
         ...inactiveSeats.map(seat => [
             seat.assignee.login || '????',
             seat.last_activity_at || 'Never'
         ])
-    ]);
+    ])
+        .addLink('View GitHub Copilot seats!', `https://github.com/organizations/${github.context.repo.owner}/settings/copilot/seat_management`)
+        .write();
 });
 run();
 
