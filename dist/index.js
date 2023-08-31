@@ -18510,16 +18510,16 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         .addHeading(`Inactive Seats: ${inactiveSeats.length.toString()} / ${seats.length.toString()}`)
         .addTable([
         [
+            { data: 'Avatar', header: true },
             { data: 'Login', header: true },
             { data: 'Last Active', header: true },
-            { data: 'Editor', header: true },
-            { data: 'Avatar', header: true }
+            { data: 'Editor', header: true }
         ],
         ...inactiveSeats.map(seat => [
+            `<img src="${seat.assignee.avatar_url}" width="33" />`,
             seat.assignee.login || '????',
             (0, moment_1.default)(seat.last_activity_at).fromNow() || 'Never',
-            seat.last_activity_editor || '????',
-            `<img src="${seat.assignee.avatar_url}" width="50" />`
+            seat.last_activity_editor || '????'
         ])
     ])
         .addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${github.context.repo.owner}/settings/copilot/seat_management`)
