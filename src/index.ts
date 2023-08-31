@@ -63,7 +63,7 @@ const run = async (): Promise<void> => {
       ],
       ...inactiveSeats.map(seat => [
         seat.assignee.login || '????',
-        momemt(seat.last_activity_at) || 'Never'
+        momemt(seat.last_activity_at).fromNow() || 'Never'
       ])
     ])
     .addLink('View GitHub Copilot seats!', `https://github.com/organizations/${github.context.repo.owner}/settings/copilot/seat_management`)

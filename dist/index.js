@@ -18516,7 +18516,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         ],
         ...inactiveSeats.map(seat => [
             seat.assignee.login || '????',
-            (0, moment_1.default)(seat.last_activity_at) || 'Never'
+            (0, moment_1.default)(seat.last_activity_at).fromNow() || 'Never'
         ])
     ])
         .addLink('View GitHub Copilot seats!', `https://github.com/organizations/${github.context.repo.owner}/settings/copilot/seat_management`)
