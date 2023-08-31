@@ -18507,19 +18507,22 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     yield core.summary
-        .addHeading("Inactive Seats")
-        .addRaw(`Inactive Seats: ${inactiveSeats.length.toString()} / ${seats.length.toString()}\n`)
+        .addHeading(`Inactive Seats: ${inactiveSeats.length.toString()} / ${seats.length.toString()}`)
         .addTable([
         [
             { data: 'Login', header: true },
-            { data: 'Last Active', header: true }
+            { data: 'Last Active', header: true },
+            { data: 'Editor', header: true },
+            { data: 'Avatar', header: true }
         ],
         ...inactiveSeats.map(seat => [
             seat.assignee.login || '????',
-            (0, moment_1.default)(seat.last_activity_at).fromNow() || 'Never'
+            (0, moment_1.default)(seat.last_activity_at).fromNow() || 'Never',
+            seat.last_activity_editor || '????',
+            `<img src="${seat.assignee.avatar_url}" width="50" />`
         ])
     ])
-        .addLink('View GitHub Copilot seats!', `https://github.com/organizations/${github.context.repo.owner}/settings/copilot/seat_management`)
+        .addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${github.context.repo.owner}/settings/copilot/seat_management`)
         .write();
 });
 run();
