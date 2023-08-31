@@ -18506,7 +18506,6 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             selected_usernames: inactiveSeats.map(seat => seat.assignee.login),
         });
     }
-    return;
     yield core.summary
         .addHeading("Inactive Seats")
         .addRaw(`Inactive Seats: ${inactiveSeats.length.toString()} / ${seats.length.toString()}\n`)
