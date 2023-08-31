@@ -32,10 +32,8 @@ jobs:
       - uses: austenstone/copilot-license-cleanup@main
         with:
           github-token: ${{ secrets.TOKEN }}
-          organization: 'octodemo'
-          remove: false
-          inactive-days: 30
 ```
+
 ![image](https://github.com/austenstone/copilot-license-cleanup/assets/22425467/4695fc23-e9c7-4403-ba04-2de0e2d36242)
 
 ## ➡️ Inputs
