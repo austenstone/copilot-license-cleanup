@@ -1,7 +1,7 @@
 {
-  "name": "action-typescript",
+  "name": "copilot-license-cleanup",
   "version": "1.0.0",
-  "description": "GitHub Actions TypeScript template",
+  "description": "GitHub Action to clean up licenses in Copilot",
   "main": "src/index.ts",
   "scripts": {
     "build": "ncc build",
