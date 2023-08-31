@@ -16,3 +16,4 @@ jobs:
           organization: 'octodemo'
           remove: false
           inactive-days: 30
+          csv: true
