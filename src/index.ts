@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import momemt from 'moment';
 import { writeFileSync } from 'fs';
-import artifact from '@actions/artifact';
+import * as artifact from '@actions/artifact';
 
 interface Input {
   token: string;
@@ -38,6 +38,8 @@ const run = async (): Promise<void> => {
       _seats = _seats.concat(response.data.seats);
       page++;
     } while (_seats.length < totalSeats);
+    core.info(`Found ${_seats.length} seats`)
+    core.info(JSON.stringify(_seats, null, 2));
     return _seats;
   });
 
@@ -60,6 +62,7 @@ const run = async (): Promise<void> => {
         org: input.org,
         selected_usernames: inactiveSeats.map(seat => seat.assignee.login),
       });
+      core.info(`Removed ${response.data.seats_cancelled} seats`);
       core.setOutput('removed-seats', response.data.seats_cancelled);
     });
   } else {
@@ -98,9 +101,8 @@ const run = async (): Promise<void> => {
         ])
       ].map(row => row.join(',')).join('\n');
       writeFileSync('inactive-seats.csv', csv);
-      await (artifact.create()).uploadArtifact('inactive-seats', ['inactive-seats.csv'], '.', {
-        continueOnError: false
-      });
+      const artifactClient = artifact.create();
+      await artifactClient.uploadArtifact('inactive-seats', ['inactive-seats.csv'], '.');
     });
   }
 

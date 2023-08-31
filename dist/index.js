@@ -25179,7 +25179,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const moment_1 = __importDefault(__nccwpck_require__(9623));
 const fs_1 = __nccwpck_require__(7147);
-const artifact_1 = __importDefault(__nccwpck_require__(2605));
+const artifact = __importStar(__nccwpck_require__(2605));
 function getInputs() {
     const result = {};
     result.token = core.getInput('github-token');
@@ -25204,6 +25204,8 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             _seats = _seats.concat(response.data.seats);
             page++;
         } while (_seats.length < totalSeats);
+        core.info(`Found ${_seats.length} seats`);
+        core.info(JSON.stringify(_seats, null, 2));
         return _seats;
     }));
     const now = new Date();
@@ -25224,6 +25226,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 org: input.org,
                 selected_usernames: inactiveSeats.map(seat => seat.assignee.login),
             });
+            core.info(`Removed ${response.data.seats_cancelled} seats`);
             core.setOutput('removed-seats', response.data.seats_cancelled);
         }));
     }
@@ -25261,9 +25264,8 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 ])
             ].map(row => row.join(',')).join('\n');
             (0, fs_1.writeFileSync)('inactive-seats.csv', csv);
-            yield (artifact_1.default.create()).uploadArtifact('inactive-seats', ['inactive-seats.csv'], '.', {
-                continueOnError: false
-            });
+            const artifactClient = artifact.create();
+            yield artifactClient.uploadArtifact('inactive-seats', ['inactive-seats.csv'], '.');
         }));
     }
 });
