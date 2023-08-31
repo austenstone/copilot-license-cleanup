@@ -76,27 +76,27 @@ const run = async (): Promise<void> => {
         [
           { data: 'Avatar', header: true },
           { data: 'Login', header: true },
-          { data: 'Last Active', header: true },
+          { data: 'Last Activity', header: true },
           { data: 'Editor', header: true }
         ],
         ...inactiveSeats.map(seat => [
           `<img src="${seat.assignee.avatar_url}" width="33" />`,
-          seat.assignee.login || '????',
-          seat.last_activity_at === null ? 'never' : momemt(seat.last_activity_at).fromNow(),
+          seat.assignee.login,
+          seat.last_activity_at === null ? 'No activity' : momemt(seat.last_activity_at).fromNow(),
           seat.last_activity_editor || '-'
         ])
       ])
-      .addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${github.context.repo.owner}/settings/copilot/seat_management`)
+      .addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${input.org}/settings/copilot/seat_management`)
       .write()
   }
 
   if (input.csv) {
     core.group('Writing CSV', async () => {
       const csv = [
-        ['Login', 'Last Active', 'Editor'],
+        ['Login', 'Last Activity', 'Last Editor Used'],
         ...inactiveSeats.map(seat => [
-          seat.assignee.login || '????',
-          seat.last_activity_at === null ? 'never' : momemt(seat.last_activity_at).fromNow(),
+          seat.assignee.login,
+          seat.last_activity_at === null ? 'No activity' : momemt(seat.last_activity_at).fromNow(),
           seat.last_activity_editor || '-'
         ])
       ].map(row => row.join(',')).join('\n');
