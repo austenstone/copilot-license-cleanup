@@ -1,6 +1,6 @@
 # Action
 
-Managing Github Copilot licenses can be a pain. Run this action to get a report of inactive users and optionally remove them.
+Managing Github Copilot licenses can be difficult because you don't know who's actually using the tool. Run this action on a schedule to automatically remove inactive Copilot licenses. It also creates a report and a csv as part of the run.
 
 ## Usage
 Create a workflow (eg: `.github/workflows/copilot-license-cleanup.yml`). See [Creating a Workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
@@ -56,6 +56,9 @@ Various inputs are defined in [`action.yml`](action.yml):
 | inactive-seat-count | The number of inactive seats |
 | removed-seats | The number of seats removed |
 | seat-count | The total number of seats |
+
+## How does it work?
+We're simply leveraging the [GitHub Copilot API](https://docs.github.com/en/rest/copilot). First we fetch all the Copilot seats and filter them to only inactive seats. Then if the seat is assigned directly we remove it but if it's assigned through a team we remove the user from the team. Those inactive users are reported as a CSV and a job summary table.
 
 ## Further help
 To get more help on the Actions see [documentation](https://docs.github.com/en/actions).
