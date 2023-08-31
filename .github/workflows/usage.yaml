@@ -1,12 +1,11 @@
-name: Usage
+name: Cleanup Copilot Licenses
 on:
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * *'
 
 jobs:
-  run:
-    name: Run Action
+  cleanup:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

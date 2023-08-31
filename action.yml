@@ -8,6 +8,7 @@ branding:
 inputs:
   organization:
     description: The organization to use for the action
+    default: ${{ github.repository_owner }}
     required: true
   github-token:
     description: The GitHub token used to create an authenticated client
