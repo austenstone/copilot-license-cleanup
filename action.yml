@@ -34,10 +34,6 @@ inputs:
     description: Whether to output a CSV of the inactive users
     default: false
     required: false
-  remove-from-team:
-    description: Whether to remove inactive users from the assigning team
-    default: false
-    required: false
 
 outputs:
   inactive-seats:
