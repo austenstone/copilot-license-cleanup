@@ -71,8 +71,8 @@ const run = async (): Promise<void> => {
         ...inactiveSeats.map(seat => [
           `<img src="${seat.assignee.avatar_url}" width="33" />`,
           seat.assignee.login || '????',
-          momemt(seat.last_activity_at).fromNow() || 'Never',
-          seat.last_activity_editor || '????'
+          seat.last_activity_at === null ? '-' : momemt(seat.last_activity_at).fromNow(),
+          seat.last_activity_editor || '-'
         ])
       ])
       .addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${github.context.repo.owner}/settings/copilot/seat_management`)
