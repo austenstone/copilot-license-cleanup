@@ -29,7 +29,7 @@ jobs:
     name: Copilot Seats
     runs-on: ubuntu-latest
     steps:
-      - uses: austenstone/copilot-license-cleanup@main
+      - uses: austenstone/copilot-license-cleanup@v1.1
         with:
           github-token: ${{ secrets.TOKEN }}
 ```
@@ -44,7 +44,7 @@ Various inputs are defined in [`action.yml`](action.yml):
 | **github&#x2011;token** | Token to use to authorize. | ${{&nbsp;github.token&nbsp;}} |
 | organization | The organization to use for the action | ${{&nbsp;github.repository_owner&nbsp;}} |
 | remove | Whether to remove inactive users | false |
-| remove-from-team | Whether to remove inactive users from the team | false |
+| remove-from-team | Whether to remove inactive users from their assigning team | false |
 | inactive&#x2011;days | The number of days to consider a user inactive | 90 |
 | job-summary | Whether to output a summary of the job | true |
 | csv | Whether to output a CSV of inactive users | false |
