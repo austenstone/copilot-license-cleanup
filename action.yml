@@ -18,6 +18,10 @@ inputs:
     description: Whether to remove inactive users
     default: false
     required: false
+  remove-from-team:
+    description: Whether to remove inactive users from the assigning team
+    default: false
+    required: false
   inactive-days:
     description: The number of days to consider a user inactive
     default: 90
@@ -28,6 +32,10 @@ inputs:
     required: false
   csv:
     description: Whether to output a CSV of the inactive users
+    default: false
+    required: false
+  remove-from-team:
+    description: Whether to remove inactive users from the assigning team
     default: false
     required: false
 

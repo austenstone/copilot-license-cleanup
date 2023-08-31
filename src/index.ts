@@ -8,6 +8,7 @@ interface Input {
   token: string;
   org: string;
   removeInactive: boolean;
+  removefromTeam: boolean;
   inactiveDays: number;
   jobSummary: boolean;
   csv: boolean;
@@ -18,6 +19,7 @@ export function getInputs(): Input {
   result.token = core.getInput('github-token');
   result.org = core.getInput('organization');
   result.removeInactive = core.getBooleanInput('remove');
+  result.removefromTeam = core.getBooleanInput('remove-from-team');
   result.inactiveDays = parseInt(core.getInput('inactive-days'));
   result.jobSummary = core.getBooleanInput('job-summary');
   result.csv = core.getBooleanInput('csv');
@@ -43,13 +45,18 @@ const run = async (): Promise<void> => {
     return _seats;
   });
 
+  const msToDays = (d) => Math.ceil(d / (1000 * 3600 * 24));
+
   const now = new Date();
   let inactiveSeats = seats.filter(seat => {
-    if (seat.last_activity_at === null) return true;
+    if (seat.last_activity_at === null) {
+      const created = new Date(seat.created_at);
+      const diff = now.getTime() - created.getTime();
+      return msToDays(diff) > input.inactiveDays;
+    }
     const lastActive = new Date(seat.last_activity_at);
     const diff = now.getTime() - lastActive.getTime();
-    const diffDays = Math.ceil(diff / (1000 * 3600 * 24));
-    return diffDays > input.inactiveDays;
+    return msToDays(diff) > input.inactiveDays;
   }).sort((a, b) => (a.last_activity_at === null ? -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()));
 
   core.setOutput('inactive-seats', JSON.stringify(inactiveSeats));
@@ -57,16 +64,30 @@ const run = async (): Promise<void> => {
   core.setOutput('seat-count', seats.length.toString());
 
   if (input.removeInactive) {
-    core.group('Removing inactive seats', async () => {
-      const response = await octokit.request(`DELETE /orgs/{org}/copilot/billing/selected_users`, {
-        org: input.org,
-        selected_usernames: inactiveSeats.map(seat => seat.assignee.login),
+    const inactiveSeatsAssignedIndividually = inactiveSeats.filter(seat => !seat.assigning_team);
+    if (inactiveSeatsAssignedIndividually.length > 0) {
+      core.group('Removing inactive seats', async () => {
+        const response = await octokit.request(`DELETE /orgs/{org}/copilot/billing/selected_users`, {
+          org: input.org,
+          selected_usernames: inactiveSeatsAssignedIndividually.map(seat => seat.assignee.login),
+        });
+        core.info(`Removed ${response.data.seats_cancelled} seats`);
+        core.setOutput('removed-seats', response.data.seats_cancelled);
       });
-      core.info(`Removed ${response.data.seats_cancelled} seats`);
-      core.setOutput('removed-seats', response.data.seats_cancelled);
+    }
+  }
+
+  if (input.removefromTeam) {
+    const inactiveSeatsAssignedByTeam = inactiveSeats.filter(seat => seat.assigning_team);
+    core.group('Removing inactive seats from team', async () => {
+      for (const seat of inactiveSeatsAssignedByTeam) {
+        await octokit.request('DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}', {
+          org: input.org,
+          team_slug: seat.assigning_team.slug,
+          username: seat.assignee.login
+        })
+      }
     });
-  } else {
-    core.setOutput('removed-seats', 0);
   }
 
   if (input.jobSummary) {
