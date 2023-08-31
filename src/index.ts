@@ -77,7 +77,7 @@ const run = async (): Promise<void> => {
           { data: 'Avatar', header: true },
           { data: 'Login', header: true },
           { data: 'Last Activity', header: true },
-          { data: 'Editor', header: true }
+          { data: 'Last Editor Used', header: true }
         ],
         ...inactiveSeats.map(seat => [
           `<img src="${seat.assignee.avatar_url}" width="33" />`,
