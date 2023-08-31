@@ -26,6 +26,10 @@ inputs:
     description: Whether to output a summary of the job
     default: true
     required: false
+  csv:
+    description: Whether to output a CSV of the inactive users
+    default: false
+    required: false
 
 outputs:
   inactive-seats:

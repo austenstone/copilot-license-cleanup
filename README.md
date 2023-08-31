@@ -25,7 +25,8 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  cleanup:
+  copilot:
+    name: Copilot Seats
     runs-on: ubuntu-latest
     steps:
       - uses: austenstone/copilot-license-cleanup@main

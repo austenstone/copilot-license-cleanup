@@ -1,6 +1,8 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import momemt from 'moment';
+import { writeFileSync } from 'fs';
+import artifact from '@actions/artifact';
 
 interface Input {
   token: string;
@@ -8,6 +10,7 @@ interface Input {
   removeInactive: boolean;
   inactiveDays: number;
   jobSummary: boolean;
+  csv: boolean;
 }
 
 export function getInputs(): Input {
@@ -17,6 +20,7 @@ export function getInputs(): Input {
   result.removeInactive = core.getBooleanInput('remove');
   result.inactiveDays = parseInt(core.getInput('inactive-days'));
   result.jobSummary = core.getBooleanInput('job-summary');
+  result.csv = core.getBooleanInput('csv');
   return result;
 }
 
@@ -24,16 +28,18 @@ const run = async (): Promise<void> => {
   const input = getInputs();
   const octokit = github.getOctokit(input.token);
 
-  let seats: any[] = [];
-  let totalSeats = 0, page = 1;
-  do {
-    const response = await octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
-      org: input.org
-    });
-    totalSeats = response.data.total_seats;
-    seats = seats.concat(response.data.seats);
-    page++;
-  } while (seats.length < totalSeats);
+  let seats = await core.group('Fetching GitHub Copilot seats', async () => {
+    let _seats: any[] = [], totalSeats = 0, page = 1;
+    do {
+      const response = await octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
+        org: input.org
+      });
+      totalSeats = response.data.total_seats;
+      _seats = _seats.concat(response.data.seats);
+      page++;
+    } while (_seats.length < totalSeats);
+    return _seats;
+  });
 
   const now = new Date();
   let inactiveSeats = seats.filter(seat => {
@@ -49,11 +55,13 @@ const run = async (): Promise<void> => {
   core.setOutput('seat-count', seats.length.toString());
 
   if (input.removeInactive) {
-    const response = await octokit.request(`DELETE /orgs/{org}/copilot/billing/selected_users`, {
-      org: input.org,
-      selected_usernames: inactiveSeats.map(seat => seat.assignee.login),
+    core.group('Removing inactive seats', async () => {
+      const response = await octokit.request(`DELETE /orgs/{org}/copilot/billing/selected_users`, {
+        org: input.org,
+        selected_usernames: inactiveSeats.map(seat => seat.assignee.login),
+      });
+      core.setOutput('removed-seats', response.data.seats_cancelled);
     });
-    core.setOutput('removed-seats', response.data.seats_cancelled);
   } else {
     core.setOutput('removed-seats', 0);
   }
@@ -71,13 +79,31 @@ const run = async (): Promise<void> => {
         ...inactiveSeats.map(seat => [
           `<img src="${seat.assignee.avatar_url}" width="33" />`,
           seat.assignee.login || '????',
-          seat.last_activity_at === null ? '-' : momemt(seat.last_activity_at).fromNow(),
+          seat.last_activity_at === null ? 'never' : momemt(seat.last_activity_at).fromNow(),
           seat.last_activity_editor || '-'
         ])
       ])
       .addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${github.context.repo.owner}/settings/copilot/seat_management`)
       .write()
   }
+
+  if (input.csv) {
+    core.group('Writing CSV', async () => {
+      const csv = [
+        ['Login', 'Last Active', 'Editor'],
+        ...inactiveSeats.map(seat => [
+          seat.assignee.login || '????',
+          seat.last_activity_at === null ? 'never' : momemt(seat.last_activity_at).fromNow(),
+          seat.last_activity_editor || '-'
+        ])
+      ].map(row => row.join(',')).join('\n');
+      writeFileSync('inactive-seats.csv', csv);
+      await (artifact.create()).uploadArtifact('inactive-seats', ['inactive-seats.csv'], '.', {
+        continueOnError: false
+      });
+    });
+  }
+
 };
 
 run();

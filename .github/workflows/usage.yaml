@@ -5,7 +5,8 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  cleanup:
+  copilot:
+    name: Copilot Seats
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

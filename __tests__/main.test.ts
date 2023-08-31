@@ -13,6 +13,7 @@ const input: any = {
   'inactive-days': process.env.INACTIVE_DAYS || '30',
   remove: process.env.REMOVE || true,
   'job-summary': process.env.JOB_SUMMARY || false,
+  csv: process.env.CSV || false,
 }
 
 test('test run', () => {
