@@ -1,8 +1,8 @@
-name: TypeScript Action
+name: Copilot License Cleanup
 author: Austen Stone
-description: A TypeScript Action
+description: Get a report of inactive Copilot users and optionally remove them
 branding:
-  icon: "plus"
+  icon: "clock"
   color: "blue"
 
 inputs:
