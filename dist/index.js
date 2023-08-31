@@ -25217,6 +25217,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         const diffDays = Math.ceil(diff / (1000 * 3600 * 24));
         return diffDays > input.inactiveDays;
     }).sort((a, b) => (a.last_activity_at === null ? -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()));
+    inactiveSeats = inactiveSeats.filter((seat) => seat.last_activity_at !== null);
     core.setOutput('inactive-seats', JSON.stringify(inactiveSeats));
     core.setOutput('inactive-seat-count', inactiveSeats.length.toString());
     core.setOutput('seat-count', seats.length.toString());

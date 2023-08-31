@@ -52,6 +52,9 @@ const run = async (): Promise<void> => {
     return diffDays > input.inactiveDays;
   }).sort((a, b) => (a.last_activity_at === null ? -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()));
 
+  // temp
+  inactiveSeats = inactiveSeats.filter((seat) => seat.last_activity_at !== null);
+
   core.setOutput('inactive-seats', JSON.stringify(inactiveSeats));
   core.setOutput('inactive-seat-count', inactiveSeats.length.toString());
   core.setOutput('seat-count', seats.length.toString());
