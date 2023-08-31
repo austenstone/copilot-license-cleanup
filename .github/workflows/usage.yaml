@@ -13,4 +13,6 @@ jobs:
       - uses: ./
         with:
           github-token: ${{ secrets.TOKEN }}
-          organization: 'octodemo'
+          organization: 'octoaustenstone'
+          remove: true
+          inactive-days: 30
