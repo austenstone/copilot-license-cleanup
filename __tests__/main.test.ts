@@ -12,6 +12,7 @@ const input: any = {
   organization: process.env.ORGANIZATION || 'octoaustenstone',
   'inactive-days': process.env.INACTIVE_DAYS || '30',
   remove: process.env.REMOVE || true,
+  'job-summary': process.env.JOB_SUMMARY || false,
 }
 
 test('test run', () => {

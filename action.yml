@@ -21,6 +21,20 @@ inputs:
     description: The number of days to consider a user inactive
     default: 90
     required: false
+  job-summary:
+    description: Whether to output a summary of the job
+    default: true
+    required: false
+
+outputs:
+  inactive-seats:
+    description: JSON array of inactive seats
+  inactive-seat-count:
+    description: The number of inactive seats
+  removed-seats:
+    description: The number of seats removed
+  seat-count:
+    description: The total number of seats
 
 runs:
   using: "node16"

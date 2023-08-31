@@ -18472,6 +18472,7 @@ function getInputs() {
     result.org = core.getInput('organization');
     result.removeInactive = core.getBooleanInput('remove');
     result.inactiveDays = parseInt(core.getInput('inactive-days'));
+    result.jobSummary = core.getBooleanInput('job-summary');
     return result;
 }
 exports.getInputs = getInputs;
@@ -18479,15 +18480,15 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     const input = getInputs();
     const octokit = github.getOctokit(input.token);
     let seats = [];
-    let expectedSeats = 0, page = 1;
+    let totalSeats = 0, page = 1;
     do {
         const response = yield octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
             org: input.org
         });
-        expectedSeats = response.data.total_seats;
+        totalSeats = response.data.total_seats;
         seats = seats.concat(response.data.seats);
         page++;
-    } while (seats.length < expectedSeats);
+    } while (seats.length < totalSeats);
     const now = new Date();
     let inactiveSeats = seats.filter(seat => {
         if (seat.last_activity_at === null)
@@ -18501,29 +18502,35 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     core.setOutput('inactive-seat-count', inactiveSeats.length.toString());
     core.setOutput('seat-count', seats.length.toString());
     if (input.removeInactive) {
-        yield octokit.request(`DELETE /orgs/{org}/copilot/billing/selected_users`, {
+        const response = yield octokit.request(`DELETE /orgs/{org}/copilot/billing/selected_users`, {
             org: input.org,
             selected_usernames: inactiveSeats.map(seat => seat.assignee.login),
         });
+        core.setOutput('removed-seats', response.data.seats_cancelled);
     }
-    yield core.summary
-        .addHeading(`Inactive Seats: ${inactiveSeats.length.toString()} / ${seats.length.toString()}`)
-        .addTable([
-        [
-            { data: 'Avatar', header: true },
-            { data: 'Login', header: true },
-            { data: 'Last Active', header: true },
-            { data: 'Editor', header: true }
-        ],
-        ...inactiveSeats.map(seat => [
-            `<img src="${seat.assignee.avatar_url}" width="33" />`,
-            seat.assignee.login || '????',
-            (0, moment_1.default)(seat.last_activity_at).fromNow() || 'Never',
-            seat.last_activity_editor || '????'
+    else {
+        core.setOutput('removed-seats', 0);
+    }
+    if (input.jobSummary) {
+        yield core.summary
+            .addHeading(`Inactive Seats: ${inactiveSeats.length.toString()} / ${seats.length.toString()}`)
+            .addTable([
+            [
+                { data: 'Avatar', header: true },
+                { data: 'Login', header: true },
+                { data: 'Last Active', header: true },
+                { data: 'Editor', header: true }
+            ],
+            ...inactiveSeats.map(seat => [
+                `<img src="${seat.assignee.avatar_url}" width="33" />`,
+                seat.assignee.login || '????',
+                (0, moment_1.default)(seat.last_activity_at).fromNow() || 'Never',
+                seat.last_activity_editor || '????'
+            ])
         ])
-    ])
-        .addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${github.context.repo.owner}/settings/copilot/seat_management`)
-        .write();
+            .addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${github.context.repo.owner}/settings/copilot/seat_management`)
+            .write();
+    }
 });
 run();
 
