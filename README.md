@@ -1,6 +1,6 @@
 # Action
 
-This repository serves as a [template](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template) for TypeScript [Actions](https://docs.github.com/en/actions).
+Managing Github Copilot licenses can be a pain. Run this action to get a report of inactive users and optionally remove them.
 
 ## Usage
 Create a workflow (eg: `.github/workflows/copilot-license-cleanup.yml`). See [Creating a Workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
@@ -47,6 +47,7 @@ Various inputs are defined in [`action.yml`](action.yml):
 | remove | Whether to remove inactive users | false |
 | inactive&#x2011;days | The number of days to consider a user inactive | 90 |
 | job-summary | Whether to output a summary of the job | true |
+| csv | Whether to output a CSV of inactive users | false |
 
 ## ⬅️ Outputs
 | Name | Description |
