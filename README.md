@@ -34,6 +34,25 @@ jobs:
           github-token: ${{ secrets.TOKEN }}
 ```
 
+#### Example Auto remove
+```yml
+      - uses: austenstone/copilot-license-cleanup@v1.1
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          remove: true
+          remove-from-team: true
+```
+
+#### Example Custom days before inactive
+```yml
+      - uses: austenstone/copilot-license-cleanup@v1.1
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          remove: true
+          remove-from-team: true
+          inactive-days: 10
+```
+
 ![image](https://github.com/austenstone/copilot-license-cleanup/assets/22425467/4695fc23-e9c7-4403-ba04-2de0e2d36242)
 
 ## ➡️ Inputs
