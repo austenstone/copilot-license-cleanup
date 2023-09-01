@@ -1,6 +1,6 @@
 # Action
 
-Managing Github Copilot licenses can be difficult because you don't know who's actually using the tool. Run this action on a schedule to automatically remove inactive Copilot licenses. It also creates a report and a csv as part of the run.
+Run this action on a schedule to automatically remove inactive Copilot licenses. It also creates a report as a job summary and csv.
 
 ## Usage
 Create a workflow (eg: `.github/workflows/copilot-license-cleanup.yml`). See [Creating a Workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
