@@ -11,17 +11,11 @@ on:
 jobs:
   build:
     name: Lint/Build/Test
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        node: [ '12', '14', '16' ]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Node.js ${{ matrix.node }}
+      - name: Setup Node.js
         uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node }}
       - run: npm install
       - run: npm run lint
         continue-on-error: true

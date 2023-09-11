@@ -22063,7 +22063,7 @@ exports.getInputs = getInputs;
 const run = () => __awaiter(void 0, void 0, void 0, function* () {
     const input = getInputs();
     const octokit = github.getOctokit(input.token);
-    let seats = yield core.group('Fetching GitHub Copilot seats', () => __awaiter(void 0, void 0, void 0, function* () {
+    const seats = yield core.group('Fetching GitHub Copilot seats', () => __awaiter(void 0, void 0, void 0, function* () {
         let _seats = [], totalSeats = 0, page = 1;
         do {
             const response = yield octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
@@ -22079,7 +22079,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     }));
     const msToDays = (d) => Math.ceil(d / (1000 * 3600 * 24));
     const now = new Date();
-    let inactiveSeats = seats.filter(seat => {
+    const inactiveSeats = seats.filter(seat => {
         if (seat.last_activity_at === null) {
             const created = new Date(seat.created_at);
             const diff = now.getTime() - created.getTime();

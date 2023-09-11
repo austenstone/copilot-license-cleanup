@@ -30,7 +30,8 @@ const run = async (): Promise<void> => {
   const input = getInputs();
   const octokit = github.getOctokit(input.token);
 
-  let seats = await core.group('Fetching GitHub Copilot seats', async () => {
+  const seats = await core.group('Fetching GitHub Copilot seats', async () => {
+    // No type exists for copilot endpoint yet
     let _seats: any[] = [], totalSeats = 0, page = 1;
     do {
       const response = await octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
@@ -48,7 +49,7 @@ const run = async (): Promise<void> => {
   const msToDays = (d) => Math.ceil(d / (1000 * 3600 * 24));
 
   const now = new Date();
-  let inactiveSeats = seats.filter(seat => {
+  const inactiveSeats = seats.filter(seat => {
     if (seat.last_activity_at === null) {
       const created = new Date(seat.created_at);
       const diff = now.getTime() - created.getTime();
