@@ -53,7 +53,11 @@ jobs:
           inactive-days: 10
 ```
 
-![image](https://github.com/austenstone/copilot-license-cleanup/assets/22425467/4695fc23-e9c7-4403-ba04-2de0e2d36242)
+<details>
+  <summary>Job summary example</summary>
+  ![image](https://github.com/austenstone/copilot-license-cleanup/assets/22425467/4695fc23-e9c7-4403-ba04-2de0e2d36242)
+</details>
+
 
 ## ➡️ Inputs
 Various inputs are defined in [`action.yml`](action.yml):
