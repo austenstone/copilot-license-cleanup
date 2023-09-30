@@ -3,6 +3,8 @@ import * as github from '@actions/github';
 import momemt from 'moment';
 import { writeFileSync } from 'fs';
 import * as artifact from '@actions/artifact';
+import type { Endpoints } from "@octokit/types";
+import { SummaryTableRow } from '@actions/core/lib/summary';
 
 interface Input {
   token: string;
@@ -32,7 +34,7 @@ const run = async (): Promise<void> => {
 
   const seats = await core.group('Fetching GitHub Copilot seats', async () => {
     // No type exists for copilot endpoint yet
-    let _seats: any[] = [], totalSeats = 0, page = 1;
+    let _seats: Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]['data']['seats'] = [], totalSeats = 0, page = 1;
     do {
       const response = await octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
         org: input.org
@@ -50,7 +52,7 @@ const run = async (): Promise<void> => {
 
   const now = new Date();
   const inactiveSeats = seats.filter(seat => {
-    if (seat.last_activity_at === null) {
+    if (seat.last_activity_at === null || seat.last_activity_at === undefined) {
       const created = new Date(seat.created_at);
       const diff = now.getTime() - created.getTime();
       return msToDays(diff) > input.inactiveDays;
@@ -58,7 +60,11 @@ const run = async (): Promise<void> => {
     const lastActive = new Date(seat.last_activity_at);
     const diff = now.getTime() - lastActive.getTime();
     return msToDays(diff) > input.inactiveDays;
-  }).sort((a, b) => (a.last_activity_at === null ? -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()));
+  }).sort((a, b) => (
+    a.last_activity_at === null || a.last_activity_at === undefined || b.last_activity_at === null || b.last_activity_at === undefined ?
+    -1 :
+    new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()
+  ));
 
   core.setOutput('inactive-seats', JSON.stringify(inactiveSeats));
   core.setOutput('inactive-seat-count', inactiveSeats.length.toString());
@@ -82,6 +88,7 @@ const run = async (): Promise<void> => {
     const inactiveSeatsAssignedByTeam = inactiveSeats.filter(seat => seat.assigning_team);
     core.group('Removing inactive seats from team', async () => {
       for (const seat of inactiveSeatsAssignedByTeam) {
+        if (!seat.assigning_team || typeof(seat.assignee.login) !== 'string') continue;
         await octokit.request('DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}', {
           org: input.org,
           team_slug: seat.assigning_team.slug,
@@ -103,10 +110,10 @@ const run = async (): Promise<void> => {
         ],
         ...inactiveSeats.map(seat => [
           `<img src="${seat.assignee.avatar_url}" width="33" />`,
-          seat.assignee.login,
+          seat.assignee.login || 'Unknown',
           seat.last_activity_at === null ? 'No activity' : momemt(seat.last_activity_at).fromNow(),
-          seat.last_activity_editor || '-'
-        ])
+          seat.last_activity_editor || 'Unknown'
+        ] as SummaryTableRow)
       ])
       .addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${input.org}/settings/copilot/seat_management`)
       .write()

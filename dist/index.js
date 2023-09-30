@@ -2806,7 +2806,7 @@ class OidcClient {
                 .catch(error => {
                 throw new Error(`Failed to get ID Token. \n 
         Error Code : ${error.statusCode}\n 
-        Error Message: ${error.result.message}`);
+        Error Message: ${error.message}`);
             });
             const id_token = (_a = res.result) === null || _a === void 0 ? void 0 : _a.value;
             if (!id_token) {
@@ -22137,7 +22137,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     const msToDays = (d) => Math.ceil(d / (1000 * 3600 * 24));
     const now = new Date();
     const inactiveSeats = seats.filter(seat => {
-        if (seat.last_activity_at === null) {
+        if (seat.last_activity_at === null || seat.last_activity_at === undefined) {
             const created = new Date(seat.created_at);
             const diff = now.getTime() - created.getTime();
             return msToDays(diff) > input.inactiveDays;
@@ -22145,7 +22145,9 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         const lastActive = new Date(seat.last_activity_at);
         const diff = now.getTime() - lastActive.getTime();
         return msToDays(diff) > input.inactiveDays;
-    }).sort((a, b) => (a.last_activity_at === null ? -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()));
+    }).sort((a, b) => (a.last_activity_at === null || a.last_activity_at === undefined || b.last_activity_at === null || b.last_activity_at === undefined ?
+        -1 :
+        new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()));
     core.setOutput('inactive-seats', JSON.stringify(inactiveSeats));
     core.setOutput('inactive-seat-count', inactiveSeats.length.toString());
     core.setOutput('seat-count', seats.length.toString());
@@ -22166,6 +22168,8 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         const inactiveSeatsAssignedByTeam = inactiveSeats.filter(seat => seat.assigning_team);
         core.group('Removing inactive seats from team', () => __awaiter(void 0, void 0, void 0, function* () {
             for (const seat of inactiveSeatsAssignedByTeam) {
+                if (!seat.assigning_team || typeof (seat.assignee.login) !== 'string')
+                    continue;
                 yield octokit.request('DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}', {
                     org: input.org,
                     team_slug: seat.assigning_team.slug,
@@ -22186,9 +22190,9 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             ],
             ...inactiveSeats.map(seat => [
                 `<img src="${seat.assignee.avatar_url}" width="33" />`,
-                seat.assignee.login,
+                seat.assignee.login || 'Unknown',
                 seat.last_activity_at === null ? 'No activity' : (0, moment_1.default)(seat.last_activity_at).fromNow(),
-                seat.last_activity_editor || '-'
+                seat.last_activity_editor || 'Unknown'
             ])
         ])
             .addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${input.org}/settings/copilot/seat_management`)
