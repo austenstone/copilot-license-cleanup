@@ -1,0 +1,34 @@
+name: Cleanup Copilot Licenses
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  copilot:
+    name: Copilot Seats
+    runs-on: ubuntu-latest
+    outputs:
+      inactive-seats: ${{ steps.copilot.outputs.inactive-seats }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          organization: "octodemo"
+          inactive-days: 30
+          csv: true
+  notify-inactive:
+    name: Notify Inactive Users
+    runs-on: ubuntu-latest
+    needs: copilot
+    strategy:
+      matrix:
+        user: ${{ fromJson(needs.copilot.outputs.inactive-seats) }}
+    steps:
+      - uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: 'CHANNEL_ID,ANOTHER_CHANNEL_ID'
+          slack-message: 'Hey <@${{ matrix.user }}>, you have not used Copilot for 30 days. Please contact your manager to free up your seat.'
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
