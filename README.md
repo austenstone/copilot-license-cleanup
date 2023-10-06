@@ -1,6 +1,6 @@
-# Action
+# Copilot License Cleanup
 
-Managing Github Copilot licenses can be difficult because you don't know who's actually using the tool. Run this action on a schedule to automatically remove inactive Copilot licenses. It also creates a report and a csv as part of the run.
+Run this action on a schedule to automatically remove inactive Copilot licenses. It also creates a report as a job summary and csv.
 
 ## Usage
 Create a workflow (eg: `.github/workflows/copilot-license-cleanup.yml`). See [Creating a Workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
@@ -34,7 +34,32 @@ jobs:
           github-token: ${{ secrets.TOKEN }}
 ```
 
-![image](https://github.com/austenstone/copilot-license-cleanup/assets/22425467/4695fc23-e9c7-4403-ba04-2de0e2d36242)
+#### Example Auto remove
+```yml
+      - uses: austenstone/copilot-license-cleanup@v1.1
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          remove: true
+          remove-from-team: true
+```
+
+#### Example Custom days before inactive
+```yml
+      - uses: austenstone/copilot-license-cleanup@v1.1
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          remove: true
+          remove-from-team: true
+          inactive-days: 10
+```
+
+<details>
+  <summary>Job summary example</summary>
+  
+  <img src="https://github.com/austenstone/copilot-license-cleanup/assets/22425467/4695fc23-e9c7-4403-ba04-2de0e2d36242"/>
+  
+</details>
+
 
 ## ➡️ Inputs
 Various inputs are defined in [`action.yml`](action.yml):
