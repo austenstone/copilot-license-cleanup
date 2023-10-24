@@ -62,8 +62,7 @@ const run = async (): Promise<void> => {
     return msToDays(diff) > input.inactiveDays;
   }).sort((a, b) => (
     a.last_activity_at === null || a.last_activity_at === undefined || b.last_activity_at === null || b.last_activity_at === undefined ?
-    -1 :
-    new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()
+    -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()
   ));
 
   core.setOutput('inactive-seats', JSON.stringify(inactiveSeats));
