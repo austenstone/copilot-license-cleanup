@@ -22105,6 +22105,7 @@ const github = __importStar(__nccwpck_require__(5438));
 const moment_1 = __importDefault(__nccwpck_require__(9623));
 const fs_1 = __nccwpck_require__(7147);
 const artifact = __importStar(__nccwpck_require__(2605));
+const request_error_1 = __nccwpck_require__(537);
 function getInputs() {
     const result = {};
     result.token = core.getInput('github-token');
@@ -22123,12 +22124,23 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     const seats = yield core.group('Fetching GitHub Copilot seats', () => __awaiter(void 0, void 0, void 0, function* () {
         let _seats = [], totalSeats = 0, page = 1;
         do {
-            const response = yield octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
-                org: input.org
-            });
-            totalSeats = response.data.total_seats;
-            _seats = _seats.concat(response.data.seats);
-            page++;
+            try {
+                const response = yield octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
+                    org: input.org
+                });
+                totalSeats = response.data.total_seats;
+                _seats = _seats.concat(response.data.seats);
+                page++;
+            }
+            catch (error) {
+                if (error instanceof request_error_1.RequestError && error.message === "Copilot Business is not enabled for this organization.") {
+                    core.error(error.message);
+                    break;
+                }
+                else {
+                    throw error;
+                }
+            }
         } while (_seats.length < totalSeats);
         core.info(`Found ${_seats.length} seats`);
         core.info(JSON.stringify(_seats, null, 2));
@@ -22146,8 +22158,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         const diff = now.getTime() - lastActive.getTime();
         return msToDays(diff) > input.inactiveDays;
     }).sort((a, b) => (a.last_activity_at === null || a.last_activity_at === undefined || b.last_activity_at === null || b.last_activity_at === undefined ?
-        -1 :
-        new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()));
+        -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()));
     core.setOutput('inactive-seats', JSON.stringify(inactiveSeats));
     core.setOutput('inactive-seat-count', inactiveSeats.length.toString());
     core.setOutput('seat-count', seats.length.toString());

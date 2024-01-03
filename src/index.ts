@@ -5,6 +5,7 @@ import { writeFileSync } from 'fs';
 import * as artifact from '@actions/artifact';
 import type { Endpoints } from "@octokit/types";
 import { SummaryTableRow } from '@actions/core/lib/summary';
+import { RequestError } from '@octokit/request-error';
 
 interface Input {
   token: string;
@@ -44,8 +45,8 @@ const run = async (): Promise<void> => {
         _seats = _seats.concat(response.data.seats);
         page++;
       } catch (error) {
-        if (error instanceof github.HttpError && error.message === "Copilot Business is not enabled for this organization.") {
-          core.error(error.message);
+        if (error instanceof RequestError && error.message === "Copilot Business is not enabled for this organization.") {
+          core.error((error as Error).message);
           break;
         } else {
           throw error;
