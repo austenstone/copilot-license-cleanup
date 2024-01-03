@@ -46,7 +46,7 @@ const run = async (): Promise<void> => {
         page++;
       } catch (error) {
         if (error instanceof RequestError && error.message === "Copilot Business is not enabled for this organization.") {
-          core.error((error as Error).message);
+          core.error((error as Error).message + `(${input.org})`);
           break;
         } else {
           throw error;
