@@ -22202,7 +22202,11 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                         { data: 'Last Activity', header: true },
                         { data: 'Last Editor Used', header: true }
                     ],
-                    ...inactiveSeats.map(seat => [
+                    ...inactiveSeats.sort((a, b) => {
+                        const loginA = (a.assignee.login || 'Unknown');
+                        const loginB = (b.assignee.login || 'Unknown');
+                        return loginA.localeCompare(loginB);
+                    }).map(seat => [
                         `<img src="${seat.assignee.avatar_url}" width="33" />`,
                         seat.assignee.login || 'Unknown',
                         seat.last_activity_at === null ? 'No activity' : (0, moment_1.default)(seat.last_activity_at).fromNow(),

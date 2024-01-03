@@ -123,7 +123,11 @@ const run = async (): Promise<void> => {
               { data: 'Last Activity', header: true },
               { data: 'Last Editor Used', header: true }
             ],
-            ...inactiveSeats.map(seat => [
+            ...inactiveSeats.sort((a, b) => {
+              const loginA = (a.assignee.login || 'Unknown') as string;
+              const loginB = (b.assignee.login || 'Unknown') as string;
+              return loginA.localeCompare(loginB);
+            }).map(seat => [
               `<img src="${seat.assignee.avatar_url}" width="33" />`,
               seat.assignee.login || 'Unknown',
               seat.last_activity_at === null ? 'No activity' : momemt(seat.last_activity_at).fromNow(),
