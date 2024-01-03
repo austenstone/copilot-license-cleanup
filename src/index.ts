@@ -36,12 +36,21 @@ const run = async (): Promise<void> => {
     // No type exists for copilot endpoint yet
     let _seats: Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]['data']['seats'] = [], totalSeats = 0, page = 1;
     do {
-      const response = await octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
-        org: input.org
-      });
-      totalSeats = response.data.total_seats;
-      _seats = _seats.concat(response.data.seats);
-      page++;
+      try {
+        const response = await octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
+          org: input.org
+        });
+        totalSeats = response.data.total_seats;
+        _seats = _seats.concat(response.data.seats);
+        page++;
+      } catch (error) {
+        if (error instanceof github.HttpError && error.message === "Copilot Business is not enabled for this organization.") {
+          core.error(error.message);
+          break;
+        } else {
+          throw error;
+        }
+      }
     } while (_seats.length < totalSeats);
     core.info(`Found ${_seats.length} seats`)
     core.info(JSON.stringify(_seats, null, 2));
