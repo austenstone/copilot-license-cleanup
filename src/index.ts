@@ -51,7 +51,7 @@ const run = async (): Promise<void> => {
           page++;
         } catch (error) {
           if (error instanceof RequestError && error.message === "Copilot Business is not enabled for this organization.") {
-            core.error((error as Error).message + ` (${input.org})`);
+            core.error((error as Error).message + ` (${org})`);
             break;
           } else {
             throw error;
@@ -89,7 +89,7 @@ const run = async (): Promise<void> => {
       if (inactiveSeatsAssignedIndividually.length > 0) {
         core.group('Removing inactive seats', async () => {
           const response = await octokit.request(`DELETE /orgs/{org}/copilot/billing/selected_users`, {
-            org: input.org,
+            org: org,
             selected_usernames: inactiveSeatsAssignedIndividually.map(seat => seat.assignee.login),
           });
           core.info(`Removed ${response.data.seats_cancelled} seats`);
@@ -104,7 +104,7 @@ const run = async (): Promise<void> => {
         for (const seat of inactiveSeatsAssignedByTeam) {
           if (!seat.assigning_team || typeof(seat.assignee.login) !== 'string') continue;
           await octokit.request('DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}', {
-            org: input.org,
+            org: org,
             team_slug: seat.assigning_team.slug,
             username: seat.assignee.login
           })
@@ -114,22 +114,24 @@ const run = async (): Promise<void> => {
 
     if (input.jobSummary) {
       await core.summary
-        .addHeading(`Inactive Seats: ${inactiveSeats.length.toString()} / ${seats.length.toString()}`)
-        .addTable([
-          [
-            { data: 'Avatar', header: true },
-            { data: 'Login', header: true },
-            { data: 'Last Activity', header: true },
-            { data: 'Last Editor Used', header: true }
-          ],
-          ...inactiveSeats.map(seat => [
-            `<img src="${seat.assignee.avatar_url}" width="33" />`,
-            seat.assignee.login || 'Unknown',
-            seat.last_activity_at === null ? 'No activity' : momemt(seat.last_activity_at).fromNow(),
-            seat.last_activity_editor || 'Unknown'
-          ] as SummaryTableRow)
-        ])
-        .addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${input.org}/settings/copilot/seat_management`)
+        .addHeading(`${org} - Inactive Seats: ${inactiveSeats.length.toString()} / ${seats.length.toString()}`)
+        if (seats.length > 0) {
+          core.summary.addTable([
+            [
+              { data: 'Avatar', header: true },
+              { data: 'Login', header: true },
+              { data: 'Last Activity', header: true },
+              { data: 'Last Editor Used', header: true }
+            ],
+            ...inactiveSeats.map(seat => [
+              `<img src="${seat.assignee.avatar_url}" width="33" />`,
+              seat.assignee.login || 'Unknown',
+              seat.last_activity_at === null ? 'No activity' : momemt(seat.last_activity_at).fromNow(),
+              seat.last_activity_editor || 'Unknown'
+            ] as SummaryTableRow)
+          ])
+        }
+        core.summary.addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${org}/settings/copilot/seat_management`)
         .write()
     }
 

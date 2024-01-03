@@ -22136,7 +22136,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 }
                 catch (error) {
                     if (error instanceof request_error_1.RequestError && error.message === "Copilot Business is not enabled for this organization.") {
-                        core.error(error.message + ` (${input.org})`);
+                        core.error(error.message + ` (${org})`);
                         break;
                     }
                     else {
@@ -22169,7 +22169,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             if (inactiveSeatsAssignedIndividually.length > 0) {
                 core.group('Removing inactive seats', () => __awaiter(void 0, void 0, void 0, function* () {
                     const response = yield octokit.request(`DELETE /orgs/{org}/copilot/billing/selected_users`, {
-                        org: input.org,
+                        org: org,
                         selected_usernames: inactiveSeatsAssignedIndividually.map(seat => seat.assignee.login),
                     });
                     core.info(`Removed ${response.data.seats_cancelled} seats`);
@@ -22184,7 +22184,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                     if (!seat.assigning_team || typeof (seat.assignee.login) !== 'string')
                         continue;
                     yield octokit.request('DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}', {
-                        org: input.org,
+                        org: org,
                         team_slug: seat.assigning_team.slug,
                         username: seat.assignee.login
                     });
@@ -22193,22 +22193,24 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         }
         if (input.jobSummary) {
             yield core.summary
-                .addHeading(`Inactive Seats: ${inactiveSeats.length.toString()} / ${seats.length.toString()}`)
-                .addTable([
-                [
-                    { data: 'Avatar', header: true },
-                    { data: 'Login', header: true },
-                    { data: 'Last Activity', header: true },
-                    { data: 'Last Editor Used', header: true }
-                ],
-                ...inactiveSeats.map(seat => [
-                    `<img src="${seat.assignee.avatar_url}" width="33" />`,
-                    seat.assignee.login || 'Unknown',
-                    seat.last_activity_at === null ? 'No activity' : (0, moment_1.default)(seat.last_activity_at).fromNow(),
-                    seat.last_activity_editor || 'Unknown'
-                ])
-            ])
-                .addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${input.org}/settings/copilot/seat_management`)
+                .addHeading(`${org} - Inactive Seats: ${inactiveSeats.length.toString()} / ${seats.length.toString()}`);
+            if (seats.length > 0) {
+                core.summary.addTable([
+                    [
+                        { data: 'Avatar', header: true },
+                        { data: 'Login', header: true },
+                        { data: 'Last Activity', header: true },
+                        { data: 'Last Editor Used', header: true }
+                    ],
+                    ...inactiveSeats.map(seat => [
+                        `<img src="${seat.assignee.avatar_url}" width="33" />`,
+                        seat.assignee.login || 'Unknown',
+                        seat.last_activity_at === null ? 'No activity' : (0, moment_1.default)(seat.last_activity_at).fromNow(),
+                        seat.last_activity_editor || 'Unknown'
+                    ])
+                ]);
+            }
+            core.summary.addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${org}/settings/copilot/seat_management`)
                 .write();
         }
         if (input.csv) {
