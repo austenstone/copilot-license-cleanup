@@ -22110,6 +22110,7 @@ function getInputs() {
     const result = {};
     result.token = core.getInput('github-token');
     result.org = core.getInput('organization');
+    result.enterprise = core.getInput('enterprise');
     result.removeInactive = core.getBooleanInput('remove');
     result.removefromTeam = core.getBooleanInput('remove-from-team');
     result.inactiveDays = parseInt(core.getInput('inactive-days'));
@@ -22120,8 +22121,20 @@ function getInputs() {
 exports.getInputs = getInputs;
 const run = () => __awaiter(void 0, void 0, void 0, function* () {
     const input = getInputs();
-    const organizations = input.org.split(',').map(org => org.trim());
+    let organizations;
     const octokit = github.getOctokit(input.token);
+    if (input.enterprise && input.enterprise !== null) {
+        core.info('Fetching all organizations for ${input.enterprise}...');
+        const organizationsResponse = yield octokit.request('GET /enterprises/{enterprise}/organizations', {
+            enterprise: input.enterprise,
+            per_page: 100
+        });
+        organizations = organizationsResponse.data.map(org => org.login);
+        core.info(`Found ${organizations.length} organizations: ${organizations.join(', ')}`);
+    }
+    else {
+        organizations = input.org.split(',').map(org => org.trim());
+    }
     for (const org of organizations) {
         const seats = yield core.group('Fetching GitHub Copilot seats for ' + org, () => __awaiter(void 0, void 0, void 0, function* () {
             let _seats = [], totalSeats = 0, page = 1;

@@ -10,6 +10,7 @@ import { RequestError } from '@octokit/request-error';
 interface Input {
   token: string;
   org: string;
+  enterprise: string;
   removeInactive: boolean;
   removefromTeam: boolean;
   inactiveDays: number;
@@ -21,6 +22,7 @@ export function getInputs(): Input {
   const result = {} as Input;
   result.token = core.getInput('github-token');
   result.org = core.getInput('organization');
+  result.enterprise = core.getInput('enterprise');
   result.removeInactive = core.getBooleanInput('remove');
   result.removefromTeam = core.getBooleanInput('remove-from-team');
   result.inactiveDays = parseInt(core.getInput('inactive-days'));
@@ -31,9 +33,26 @@ export function getInputs(): Input {
 
 const run = async (): Promise<void> => {
   const input = getInputs();
-  // TODO: Add logic to search all orgs in an enterprise here
-  const organizations = input.org.split(',').map(org => org.trim());
+  let organizations: string[];
   const octokit = github.getOctokit(input.token);
+
+  if (input.enterprise && input.enterprise !== null) {
+    core.info('Fetching all organizations for ${input.enterprise}...');
+
+    // Fetch all organizations in the enterprise
+    const organizationsResponse = await octokit.request('GET /enterprises/{enterprise}/organizations', {
+      enterprise: input.enterprise,
+      per_page: 100
+    });
+    
+    organizations = organizationsResponse.data.map(org => org.login);
+    core.info(`Found ${organizations.length} organizations: ${organizations.join(', ')}`);
+
+  } else {
+    // Split org input by comma (to allow multiple orgs)
+    organizations = input.org.split(',').map(org => org.trim());
+  }
+
 
   for (const org of organizations) {
     // Process each organization
