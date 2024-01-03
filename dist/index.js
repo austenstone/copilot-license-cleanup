@@ -22124,12 +22124,21 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     let organizations;
     const octokit = github.getOctokit(input.token);
     if (input.enterprise && input.enterprise !== null) {
-        core.info('Fetching all organizations for ${input.enterprise}...');
-        const organizationsResponse = yield octokit.request('GET /enterprises/{enterprise}/organizations', {
-            enterprise: input.enterprise,
-            per_page: 100
-        });
-        organizations = organizationsResponse.data.map(org => org.login);
+        core.info(`Fetching all organizations for ${input.enterprise}...`);
+        const query = `
+      query ($enterprise: String!) {
+        enterprise(slug: $enterprise) {
+          organizations(first: 100) {
+            nodes {
+              login
+            }
+          }
+        }
+      }
+    `;
+        const variables = { enterprise: input.enterprise };
+        const response = yield octokit.graphql(query, variables);
+        organizations = response.enterprise.organizations.nodes.map(org => org.login);
         core.info(`Found ${organizations.length} organizations: ${organizations.join(', ')}`);
     }
     else {
