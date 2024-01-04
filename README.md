@@ -8,7 +8,7 @@ Create a workflow (eg: `.github/workflows/copilot-license-cleanup.yml`). See [Cr
 
 ### PAT(Personal Access Token)
 
-You will need to [create a PAT(Personal Access Token)](https://github.com/settings/tokens/new?scopes=manage_billing:copilot) that has `manage_billing:copilot` access.
+You will need to [create a PAT(Personal Access Token)](https://github.com/settings/tokens/new?scopes=manage_billing:copilot) that has `manage_billing:copilot` access.  If you are specifying an 'enterprise' rather than individual organizations you must also include the `read:org` and `read:enterprise` scopes. 
 
 Add this PAT as a secret `TOKEN` so we can use it for input `github-token`, see [Creating encrypted secrets for a repository](https://docs.github.com/en/enterprise-cloud@latest/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository). 
 ### Organizations
@@ -53,6 +53,38 @@ jobs:
           inactive-days: 10
 ```
 
+#### Example Specifying multiple organizations: 
+```yml
+      - uses: austenstone/copilot-license-cleanup@v1.1
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          organization: exampleorg1, demoorg2, myorg3
+```
+
+#### Example specifying a GitHub Enterprise (to run on all organizations in the enterprise):
+```yml
+      - uses: austenstone/copilot-license-cleanup@v1.1
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          enterprise: octodemo
+```
+
+#### Example uploading inactive users JSON artifact
+```yml
+      - uses: austenstone/copilot-license-cleanup@v1.1
+        id: copilot
+        with:
+          github-token: ${{ secrets.TOKEN }}
+      - name: Save inactive seats JSON to a file
+        run: |
+          echo '${{ steps.copilot.outputs.inactive-seats }}' | jq . > inactive-seats.json
+      - name: Upload inactive seats JSON as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: inactive-seats-json
+          path: inactive-seats.json
+```
+
 <details>
   <summary>Job summary example</summary>
   
@@ -67,7 +99,8 @@ Various inputs are defined in [`action.yml`](action.yml):
 | Name | Description | Default |
 | --- | - | - |
 | **github&#x2011;token** | Token to use to authorize. | ${{&nbsp;github.token&nbsp;}} |
-| organization | The organization to use for the action | ${{&nbsp;github.repository_owner&nbsp;}} |
+| organization | The organization(s) to use for the action (comma separated)| ${{&nbsp;github.repository_owner&nbsp;}} |
+| enterprise | (optional) All organizations in this enterprise (overrides organization) | null |
 | remove | Whether to remove inactive users | false |
 | remove-from-team | Whether to remove inactive users from their assigning team | false |
 | inactive&#x2011;days | The number of days to consider a user inactive | 90 |
