@@ -22137,9 +22137,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
       }
     `;
         const variables = { "enterprise": input.enterprise };
-        core.info(`Input variables are ${variables}`);
         const response = yield octokit.graphql(query, variables);
-        core.info(`Response is ${JSON.stringify(response, null, 2)}`);
         organizations = response.enterprise.organizations.nodes.map(org => org.login);
         core.info(`Found ${organizations.length} organizations: ${organizations.join(', ')}`);
     }
@@ -22161,6 +22159,11 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 catch (error) {
                     if (error instanceof request_error_1.RequestError && error.message === "Copilot Business is not enabled for this organization.") {
                         core.error(error.message + ` (${org})`);
+                        break;
+                    }
+                    else if (error instanceof request_error_1.RequestError && error.status === 404) {
+                        core.error(error.message + ` (${org})`);
+                        core.error(`Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
                         break;
                     }
                     else {

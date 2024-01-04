@@ -63,13 +63,12 @@ const run = async (): Promise<void> => {
     `;
 
     const variables = { "enterprise": input.enterprise };
-    core.info(`Input variables are ${variables}`)
       const response = await octokit.graphql<GraphQlResponse>(query, variables);
-      // Debugging response
-      core.info(`Response is ${JSON.stringify(response, null, 2)}`)
       organizations = response.enterprise.organizations.nodes.map(org => org.login);
 
       core.info(`Found ${organizations.length} organizations: ${organizations.join(', ')}`);
+
+      // TODO - Add pagination support
 
   } else {
     // Split org input by comma (to allow multiple orgs)
@@ -94,6 +93,10 @@ const run = async (): Promise<void> => {
         } catch (error) {
           if (error instanceof RequestError && error.message === "Copilot Business is not enabled for this organization.") {
             core.error((error as Error).message + ` (${org})`);
+            break;
+          } else if (error instanceof RequestError && error.status === 404) {
+            core.error((error as Error).message + ` (${org})`);
+            core.error(`Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
             break;
           } else {
             throw error;
