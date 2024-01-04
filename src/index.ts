@@ -36,7 +36,6 @@ const run = async (): Promise<void> => {
   let organizations: string[] = [];
   let hasNextPage = false;
   let afterCursor: string | undefined = undefined;
-  //type SeatWithOrg = { last_activity_at: string | null; created_at: string; organization: string; };
   type SeatWithOrg = { 
     last_activity_at: string | null; 
     created_at: string; 
@@ -206,24 +205,6 @@ const run = async (): Promise<void> => {
         core.summary.addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${org}/settings/copilot/seat_management`)
         .write()
     }
-    /*
-    if (input.csv) {
-      core.group('Writing CSV', async () => {
-        const csv = [
-          ['Organization', 'Login', 'Last Activity', 'Last Editor Used'],
-          ...inactiveSeats.map(seat => [
-            org,
-            seat.assignee.login,
-            seat.last_activity_at === null ? 'No activity' : momemt(seat.last_activity_at).fromNow(),
-            seat.last_activity_editor || '-'
-          ])
-        ].map(row => row.join(',')).join('\n');
-        writeFileSync('inactive-seats.csv', csv);
-        const artifactClient = artifact.create();
-        await artifactClient.uploadArtifact('inactive-seats', ['inactive-seats.csv'], '.');
-      });
-    }
-    */
   }
 
   // Write CSV if requested (for all orgs)
