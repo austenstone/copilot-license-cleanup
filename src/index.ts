@@ -33,7 +33,10 @@ export function getInputs(): Input {
 
 const run = async (): Promise<void> => {
   const input = getInputs();
-  let organizations: string[];
+  let organizations: string[] = [];
+  let hasNextPage = false;
+  let afterCursor: string | undefined = undefined;
+
   const octokit = github.getOctokit(input.token);
 
   if (input.enterprise && input.enterprise !== null) {
@@ -50,25 +53,33 @@ const run = async (): Promise<void> => {
       };
     }
 
-    const query = `
-      query ($enterprise: String!) {
-        enterprise(slug: $enterprise) {
-          organizations(first: 100) {
-            nodes {
-              login
+    do {
+      const query = `
+        query ($enterprise: String!, $after: String) {
+          enterprise(slug: $enterprise) {
+            organizations(first: 100, after: $after) {
+              pageInfo {
+                endCursor
+                hasNextPage
+              }
+              nodes {
+                login
+              }
             }
           }
         }
-      }
-    `;
+      `;
 
-    const variables = { "enterprise": input.enterprise };
+      const variables = { "enterprise": input.enterprise, "after": afterCursor };
       const response = await octokit.graphql<GraphQlResponse>(query, variables);
       organizations = response.enterprise.organizations.nodes.map(org => org.login);
 
-      core.info(`Found ${organizations.length} organizations: ${organizations.join(', ')}`);
+      hasNextPage = response.enterprise.organizations.pageInfo.hasNextPage;
+      afterCursor = response.enterprise.organizations.pageInfo.endCursor;
+      
+    } while (hasNextPage);
 
-      // TODO - Add pagination support
+    core.info(`Found ${organizations.length} organizations: ${organizations.join(', ')}`);
 
   } else {
     // Split org input by comma (to allow multiple orgs)
