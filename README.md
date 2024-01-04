@@ -84,7 +84,8 @@ Various inputs are defined in [`action.yml`](action.yml):
 | Name | Description | Default |
 | --- | - | - |
 | **github&#x2011;token** | Token to use to authorize. | ${{&nbsp;github.token&nbsp;}} |
-| organization | The organization to use for the action | ${{&nbsp;github.repository_owner&nbsp;}} |
+| organization | The organization(s) to use for the action (comma separated)| ${{&nbsp;github.repository_owner&nbsp;}} |
+| enterprise | (optional) All organizations in this enterprise (overrides organization) | null |
 | remove | Whether to remove inactive users | false |
 | remove-from-team | Whether to remove inactive users from their assigning team | false |
 | inactive&#x2011;days | The number of days to consider a user inactive | 90 |
