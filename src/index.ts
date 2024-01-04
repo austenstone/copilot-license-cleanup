@@ -95,8 +95,7 @@ const run = async (): Promise<void> => {
             core.error((error as Error).message + ` (${org})`);
             break;
           } else if (error instanceof RequestError && error.status === 404) {
-            core.error((error as Error).message + ` (${org})`);
-            core.error(`Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
+            core.error((error as Error).message + ` (${org}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
             break;
           } else {
             throw error;

@@ -22162,8 +22162,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                         break;
                     }
                     else if (error instanceof request_error_1.RequestError && error.status === 404) {
-                        core.error(error.message + ` (${org})`);
-                        core.error(`Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
+                        core.error(error.message + ` (${org}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
                         break;
                     }
                     else {
