@@ -69,6 +69,21 @@ jobs:
           enterprise: octodemo
 ```
 
+#### Example uploading inactive users JSON artifact
+```yml
+      - uses: austenstone/copilot-license-cleanup@v1.1
+        id: copilot
+        with:
+          github-token: ${{ secrets.TOKEN }}
+      - name: Save inactive seats JSON to a file
+        run: |
+          echo '${{ steps.copilot.outputs.inactive-seats }}' | jq . > inactive-seats.json
+      - name: Upload inactive seats JSON as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: inactive-seats-json
+          path: inactive-seats.json
+```
 
 <details>
   <summary>Job summary example</summary>
