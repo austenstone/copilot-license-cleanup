@@ -72,7 +72,7 @@ const run = async (): Promise<void> => {
 
       const variables = { "enterprise": input.enterprise, "after": afterCursor };
       const response = await octokit.graphql<GraphQlResponse>(query, variables);
-      organizations = response.enterprise.organizations.nodes.map(org => org.login);
+      organizations = organizations.concat(response.enterprise.organizations.nodes.map(org => org.login));
 
       hasNextPage = response.enterprise.organizations.pageInfo.hasNextPage;
       afterCursor = response.enterprise.organizations.pageInfo.endCursor;

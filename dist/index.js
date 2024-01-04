@@ -22145,7 +22145,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
       `;
             const variables = { "enterprise": input.enterprise, "after": afterCursor };
             const response = yield octokit.graphql(query, variables);
-            organizations = response.enterprise.organizations.nodes.map(org => org.login);
+            organizations = organizations.concat(response.enterprise.organizations.nodes.map(org => org.login));
             hasNextPage = response.enterprise.organizations.pageInfo.hasNextPage;
             afterCursor = response.enterprise.organizations.pageInfo.endCursor;
         } while (hasNextPage);
