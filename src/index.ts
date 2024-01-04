@@ -65,6 +65,9 @@ const run = async (): Promise<void> => {
     const variables = { enterprise: input.enterprise };
 
       const response = await octokit.graphql<GraphQlResponse>(query, variables);
+      // Debugging response
+      core.info(`Response is ${response}`)
+      core.info(`Response is ${JSON.stringify(response, null, 2)}`)
       organizations = response.enterprise.organizations.nodes.map(org => org.login);
 
       core.info(`Found ${organizations.length} organizations: ${organizations.join(', ')}`);

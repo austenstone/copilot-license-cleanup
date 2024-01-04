@@ -22138,6 +22138,8 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     `;
         const variables = { enterprise: input.enterprise };
         const response = yield octokit.graphql(query, variables);
+        core.info(`Response is ${response}`);
+        core.info(`Response is ${JSON.stringify(response, null, 2)}`);
         organizations = response.enterprise.organizations.nodes.map(org => org.login);
         core.info(`Found ${organizations.length} organizations: ${organizations.join(', ')}`);
     }
