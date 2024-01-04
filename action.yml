@@ -10,6 +10,10 @@ inputs:
     description: The organization to use for the action
     default: ${{ github.repository_owner }}
     required: true
+  enterprise:
+    description: Search for all organizations in the enterprise (overrides organization) 
+    default: null
+    required: false
   github-token:
     description: The GitHub token used to create an authenticated client
     default: ${{ github.token }}
