@@ -9,12 +9,12 @@ const addInput = (key, value) => {
 
 const input: any = {
   'github-token': process.env.GITHUB_TOKEN,
-  organization: process.env.ORGANIZATION || 'octoaustenstone',
+  'organization': process.env.ORGANIZATION || 'octodemo',
   'inactive-days': process.env.INACTIVE_DAYS || '30',
-  remove: process.env.REMOVE || true,
-  'remove-from-team': process.env.REMOVE_FROM_TEAM || true,
+  'remove': process.env.REMOVE || false,
+  'remove-from-team': process.env.REMOVE_FROM_TEAM || false,
   'job-summary': process.env.JOB_SUMMARY || false,
-  csv: process.env.CSV || false,
+  'csv': process.env.CSV || false,
 }
 
 test('test run', () => {
