@@ -25,5 +25,7 @@ test('test run', () => {
   const options: cp.ExecFileSyncOptions = {
     env: process.env,
   };
-  console.log(cp.execFileSync(np, [ip], options).toString());
+  
+  const spawned = cp.spawnSync(np, [ip], options);
+  console.log(spawned.stdout.toString());
 });
