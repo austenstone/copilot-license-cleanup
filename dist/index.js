@@ -22137,6 +22137,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
       }
     `;
         const variables = { "enterprise": input.enterprise };
+        core.info(`Input variables are ${variables}`);
         const response = yield octokit.graphql(query, variables);
         core.info(`Response is ${JSON.stringify(response, null, 2)}`);
         organizations = response.enterprise.organizations.nodes.map(org => org.login);

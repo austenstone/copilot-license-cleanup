@@ -63,7 +63,7 @@ const run = async (): Promise<void> => {
     `;
 
     const variables = { "enterprise": input.enterprise };
-
+    core.info(`Input variables are ${variables}`)
       const response = await octokit.graphql<GraphQlResponse>(query, variables);
       // Debugging response
       core.info(`Response is ${JSON.stringify(response, null, 2)}`)
