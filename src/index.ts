@@ -36,11 +36,15 @@ const run = async (): Promise<void> => {
   let organizations: string[] = [];
   let hasNextPage = false;
   let afterCursor: string | undefined = undefined;
-  //type SeatWithOrg = Seat & { organization: string };
-  type SeatWithOrg = { last_activity_at: string | null; created_at: string; organization: string; };
+  //type SeatWithOrg = { last_activity_at: string | null; created_at: string; organization: string; };
+  type SeatWithOrg = { 
+    last_activity_at: string | null; 
+    created_at: string; 
+    organization: string; 
+    assignee: { login: string; avatar_url: string; }; 
+    last_activity_editor: string | null; 
+  };
   let allInactiveSeats: SeatWithOrg[] = [];
-  //let allInactiveSeats = [];
-  //let allInactiveSeats: { last_activity_at: string | null; created_at: string; organization: string; }[] = [];
   let allRemovedSeatsCount = 0;
   let allSeatsCount = 0;
 
@@ -144,13 +148,8 @@ const run = async (): Promise<void> => {
     ));
 
     const inactiveSeatsWithOrg = inactiveSeats.map(seat => ({ ...seat, organization: org } as SeatWithOrg));
-    //allInactiveSeats = allInactiveSeats.concat(inactiveSeatsWithOrg);
     allInactiveSeats = [...allInactiveSeats, ...inactiveSeatsWithOrg];
     allSeatsCount += seats.length;
-    
-    //core.setOutput('inactive-seats', JSON.stringify(inactiveSeats));
-    //core.setOutput('inactive-seat-count', inactiveSeats.length.toString());
-    //core.setOutput('seat-count', seats.length.toString());
 
     if (input.removeInactive) {
       const inactiveSeatsAssignedIndividually = inactiveSeats.filter(seat => !seat.assigning_team);
@@ -163,7 +162,6 @@ const run = async (): Promise<void> => {
           core.info(`Removed ${response.data.seats_cancelled} seats`);
           console.log(typeof response.data.seats_cancelled);
           allRemovedSeatsCount += response.data.seats_cancelled;
-          //core.setOutput('removed-seats', response.data.seats_cancelled);
         });
       }
     }
@@ -208,7 +206,7 @@ const run = async (): Promise<void> => {
         core.summary.addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${org}/settings/copilot/seat_management`)
         .write()
     }
-
+    /*
     if (input.csv) {
       core.group('Writing CSV', async () => {
         const csv = [
@@ -225,10 +223,27 @@ const run = async (): Promise<void> => {
         await artifactClient.uploadArtifact('inactive-seats', ['inactive-seats.csv'], '.');
       });
     }
+    */
   }
 
-  // TODO: Write CSV and outputs for all orgs - Above would write a CSV per org and overwrite with each org...
-  
+  // Write CSV if requested (for all orgs)
+  if (input.csv) {
+    core.group('Writing CSV', async () => {
+      const csv = [
+        ['Organization', 'Login', 'Last Activity', 'Last Editor Used'],
+        ...allInactiveSeats.map(seat => [
+          seat.organization,
+          seat.assignee.login,
+          seat.last_activity_at === null ? 'No activity' : momemt(seat.last_activity_at).fromNow(),
+          seat.last_activity_editor || '-'
+        ])
+      ].map(row => row.join(',')).join('\n');
+      writeFileSync('inactive-seats.csv', csv);
+      const artifactClient = artifact.create();
+      await artifactClient.uploadArtifact('inactive-seats', ['inactive-seats.csv'], '.');
+    });
+  }
+
   // Set Outputs:
   core.setOutput('inactive-seats', JSON.stringify(allInactiveSeats));
   core.setOutput('inactive-seat-count', allInactiveSeats.length.toString());

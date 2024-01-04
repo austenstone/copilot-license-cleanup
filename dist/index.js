@@ -22257,22 +22257,22 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             core.summary.addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${org}/settings/copilot/seat_management`)
                 .write();
         }
-        if (input.csv) {
-            core.group('Writing CSV', () => __awaiter(void 0, void 0, void 0, function* () {
-                const csv = [
-                    ['Organization', 'Login', 'Last Activity', 'Last Editor Used'],
-                    ...inactiveSeats.map(seat => [
-                        org,
-                        seat.assignee.login,
-                        seat.last_activity_at === null ? 'No activity' : (0, moment_1.default)(seat.last_activity_at).fromNow(),
-                        seat.last_activity_editor || '-'
-                    ])
-                ].map(row => row.join(',')).join('\n');
-                (0, fs_1.writeFileSync)('inactive-seats.csv', csv);
-                const artifactClient = artifact.create();
-                yield artifactClient.uploadArtifact('inactive-seats', ['inactive-seats.csv'], '.');
-            }));
-        }
+    }
+    if (input.csv) {
+        core.group('Writing CSV', () => __awaiter(void 0, void 0, void 0, function* () {
+            const csv = [
+                ['Organization', 'Login', 'Last Activity', 'Last Editor Used'],
+                ...allInactiveSeats.map(seat => [
+                    seat.organization,
+                    seat.assignee.login,
+                    seat.last_activity_at === null ? 'No activity' : (0, moment_1.default)(seat.last_activity_at).fromNow(),
+                    seat.last_activity_editor || '-'
+                ])
+            ].map(row => row.join(',')).join('\n');
+            (0, fs_1.writeFileSync)('inactive-seats.csv', csv);
+            const artifactClient = artifact.create();
+            yield artifactClient.uploadArtifact('inactive-seats', ['inactive-seats.csv'], '.');
+        }));
     }
     core.setOutput('inactive-seats', JSON.stringify(allInactiveSeats));
     core.setOutput('inactive-seat-count', allInactiveSeats.length.toString());
