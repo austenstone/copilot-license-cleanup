@@ -64,10 +64,10 @@ const run = async (): Promise<void> => {
 
     const variables = { enterprise: input.enterprise };
 
-    const response = await octokit.graphql<GraphQlResponse>(query, variables);
+      const response = await octokit.graphql<GraphQlResponse>(query, variables);
+      organizations = response.enterprise.organizations.nodes.map(org => org.login);
 
-    organizations = response.enterprise.organizations.nodes.map(org => org.login);
-    core.info(`Found ${organizations.length} organizations: ${organizations.join(', ')}`);
+      core.info(`Found ${organizations.length} organizations: ${organizations.join(', ')}`);
 
   } else {
     // Split org input by comma (to allow multiple orgs)
