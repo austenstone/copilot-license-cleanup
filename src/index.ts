@@ -36,6 +36,14 @@ const run = async (): Promise<void> => {
   let organizations: string[] = [];
   let hasNextPage = false;
   let afterCursor: string | undefined = undefined;
+  //type SeatWithOrg = Seat & { organization: string };
+  type SeatWithOrg = { last_activity_at: string | null; created_at: string; organization: string; };
+  let allInactiveSeats: SeatWithOrg[] = [];
+  //let allInactiveSeats = [];
+  //let allInactiveSeats: { last_activity_at: string | null; created_at: string; organization: string; }[] = [];
+  let allRemovedSeatsCount = 0;
+  let allSeatsCount = 0;
+
 
   const octokit = github.getOctokit(input.token);
 
@@ -135,9 +143,14 @@ const run = async (): Promise<void> => {
       -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()
     ));
 
-    core.setOutput('inactive-seats', JSON.stringify(inactiveSeats));
-    core.setOutput('inactive-seat-count', inactiveSeats.length.toString());
-    core.setOutput('seat-count', seats.length.toString());
+    const inactiveSeatsWithOrg = inactiveSeats.map(seat => ({ ...seat, organization: org } as SeatWithOrg));
+    //allInactiveSeats = allInactiveSeats.concat(inactiveSeatsWithOrg);
+    allInactiveSeats = [...allInactiveSeats, ...inactiveSeatsWithOrg];
+    allSeatsCount += seats.length;
+    
+    //core.setOutput('inactive-seats', JSON.stringify(inactiveSeats));
+    //core.setOutput('inactive-seat-count', inactiveSeats.length.toString());
+    //core.setOutput('seat-count', seats.length.toString());
 
     if (input.removeInactive) {
       const inactiveSeatsAssignedIndividually = inactiveSeats.filter(seat => !seat.assigning_team);
@@ -148,7 +161,9 @@ const run = async (): Promise<void> => {
             selected_usernames: inactiveSeatsAssignedIndividually.map(seat => seat.assignee.login),
           });
           core.info(`Removed ${response.data.seats_cancelled} seats`);
-          core.setOutput('removed-seats', response.data.seats_cancelled);
+          console.log(typeof response.data.seats_cancelled);
+          allRemovedSeatsCount += response.data.seats_cancelled;
+          //core.setOutput('removed-seats', response.data.seats_cancelled);
         });
       }
     }
@@ -211,6 +226,14 @@ const run = async (): Promise<void> => {
       });
     }
   }
+
+  // TODO: Write CSV and outputs for all orgs - Above would write a CSV per org and overwrite with each org...
+  
+  // Set Outputs:
+  core.setOutput('inactive-seats', JSON.stringify(allInactiveSeats));
+  core.setOutput('inactive-seat-count', allInactiveSeats.length.toString());
+  core.setOutput('seat-count', allSeatsCount.toString());
+  core.setOutput('removed-seats', allRemovedSeatsCount.toString());
 };
 
 run();

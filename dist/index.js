@@ -22124,6 +22124,9 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     let organizations = [];
     let hasNextPage = false;
     let afterCursor = undefined;
+    let allInactiveSeats = [];
+    let allRemovedSeatsCount = 0;
+    let allSeatsCount = 0;
     const octokit = github.getOctokit(input.token);
     if (input.enterprise && input.enterprise !== null) {
         core.info(`Fetching all organizations for ${input.enterprise}...`);
@@ -22197,9 +22200,9 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             return msToDays(diff) > input.inactiveDays;
         }).sort((a, b) => (a.last_activity_at === null || a.last_activity_at === undefined || b.last_activity_at === null || b.last_activity_at === undefined ?
             -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()));
-        core.setOutput('inactive-seats', JSON.stringify(inactiveSeats));
-        core.setOutput('inactive-seat-count', inactiveSeats.length.toString());
-        core.setOutput('seat-count', seats.length.toString());
+        const inactiveSeatsWithOrg = inactiveSeats.map(seat => (Object.assign(Object.assign({}, seat), { organization: org })));
+        allInactiveSeats = [...allInactiveSeats, ...inactiveSeatsWithOrg];
+        allSeatsCount += seats.length;
         if (input.removeInactive) {
             const inactiveSeatsAssignedIndividually = inactiveSeats.filter(seat => !seat.assigning_team);
             if (inactiveSeatsAssignedIndividually.length > 0) {
@@ -22209,7 +22212,8 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                         selected_usernames: inactiveSeatsAssignedIndividually.map(seat => seat.assignee.login),
                     });
                     core.info(`Removed ${response.data.seats_cancelled} seats`);
-                    core.setOutput('removed-seats', response.data.seats_cancelled);
+                    console.log(typeof response.data.seats_cancelled);
+                    allRemovedSeatsCount += response.data.seats_cancelled;
                 }));
             }
         }
@@ -22270,6 +22274,10 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             }));
         }
     }
+    core.setOutput('inactive-seats', JSON.stringify(allInactiveSeats));
+    core.setOutput('inactive-seat-count', allInactiveSeats.length.toString());
+    core.setOutput('seat-count', allSeatsCount.toString());
+    core.setOutput('removed-seats', allRemovedSeatsCount.toString());
 });
 run();
 
