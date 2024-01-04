@@ -22260,9 +22260,20 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     }
     if (input.csv) {
         core.group('Writing CSV', () => __awaiter(void 0, void 0, void 0, function* () {
+            const sortedSeats = allInactiveSeats.sort((a, b) => {
+                if (a.organization < b.organization)
+                    return -1;
+                if (a.organization > b.organization)
+                    return 1;
+                if (a.assignee.login < b.assignee.login)
+                    return -1;
+                if (a.assignee.login > b.assignee.login)
+                    return 1;
+                return 0;
+            });
             const csv = [
                 ['Organization', 'Login', 'Last Activity', 'Last Editor Used'],
-                ...allInactiveSeats.map(seat => [
+                ...sortedSeats.map(seat => [
                     seat.organization,
                     seat.assignee.login,
                     seat.last_activity_at === null ? 'No activity' : (0, moment_1.default)(seat.last_activity_at).fromNow(),

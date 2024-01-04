@@ -229,9 +229,18 @@ const run = async (): Promise<void> => {
   // Write CSV if requested (for all orgs)
   if (input.csv) {
     core.group('Writing CSV', async () => {
+      // Sort by organization and then by login
+      const sortedSeats = allInactiveSeats.sort((a, b) => {
+        if (a.organization < b.organization) return -1;
+        if (a.organization > b.organization) return 1;
+        if (a.assignee.login < b.assignee.login) return -1;
+        if (a.assignee.login > b.assignee.login) return 1;
+        return 0;
+      });
+
       const csv = [
         ['Organization', 'Login', 'Last Activity', 'Last Editor Used'],
-        ...allInactiveSeats.map(seat => [
+        ...sortedSeats.map(seat => [
           seat.organization,
           seat.assignee.login,
           seat.last_activity_at === null ? 'No activity' : momemt(seat.last_activity_at).fromNow(),
