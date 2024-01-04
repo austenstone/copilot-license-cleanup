@@ -22256,8 +22256,9 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         if (input.csv) {
             core.group('Writing CSV', () => __awaiter(void 0, void 0, void 0, function* () {
                 const csv = [
-                    ['Login', 'Last Activity', 'Last Editor Used'],
+                    ['Organization', 'Login', 'Last Activity', 'Last Editor Used'],
                     ...inactiveSeats.map(seat => [
+                        org,
                         seat.assignee.login,
                         seat.last_activity_at === null ? 'No activity' : (0, moment_1.default)(seat.last_activity_at).fromNow(),
                         seat.last_activity_editor || '-'

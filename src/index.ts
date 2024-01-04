@@ -197,8 +197,9 @@ const run = async (): Promise<void> => {
     if (input.csv) {
       core.group('Writing CSV', async () => {
         const csv = [
-          ['Login', 'Last Activity', 'Last Editor Used'],
+          ['Organization', 'Login', 'Last Activity', 'Last Editor Used'],
           ...inactiveSeats.map(seat => [
+            org,
             seat.assignee.login,
             seat.last_activity_at === null ? 'No activity' : momemt(seat.last_activity_at).fromNow(),
             seat.last_activity_editor || '-'
