@@ -22280,7 +22280,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             });
             let usersToDeploy = [];
             records.forEach(record => {
-                console.log("Record: ", record);
+                core.info(`Record: ${JSON.stringify(record)}`);
                 const hasEmptyValues = Object.values(record).some(value => value === '');
                 const date = new Date(record.activation_date);
                 const hasInvalidDate = isNaN(date.getTime());

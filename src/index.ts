@@ -248,7 +248,8 @@ const run = async (): Promise<void> => {
 
       records.forEach(record => {
         // TODO - Remove after troubleshooting
-        console.log("Record: ", record)
+        core.info(`Record: ${JSON.stringify(record)}`);
+        //console.log("Record: ", record)
 
         // Check for empty values
         const hasEmptyValues = Object.values(record).some(value => value === '');
