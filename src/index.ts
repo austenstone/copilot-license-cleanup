@@ -3,7 +3,8 @@ import * as github from '@actions/github';
 import momemt from 'moment';
 import { writeFileSync, readFileSync, existsSync } from 'fs';
 import path from 'path';
-import { parse } from 'csv-parse';
+//import { parse } from 'csv-parse';
+import { parse } from 'csv-parse/sync';
 import * as artifact from '@actions/artifact';
 import type { Endpoints } from "@octokit/types";
 import { SummaryTableRow } from '@actions/core/lib/summary';
@@ -237,37 +238,42 @@ const run = async (): Promise<void> => {
     
       const fileContent = readFileSync(csvFilePath, { encoding: 'utf-8' });
       core.info(`File content: ${fileContent}`)
-      
+
+      /*
       const records = parse(fileContent, { 
         delimiter: ',',
         columns: true,
         skip_empty_lines: true,
         trim: true,
       });
+      */
 
-      let usersToDeploy: UserList[] = [];
+      const records: UserList[] = parse(fileContent, { 
+        columns: true,
+        skip_empty_lines: true,
+        trim: true,
+      });
 
-      records.forEach(record => {
+      const usersToDeploy: UserList[] = records.filter(record => {
         // TODO - Remove after troubleshooting
         core.info(`Record: ${JSON.stringify(record)}`);
-        //console.log("Record: ", record)
 
         // Check for empty values
         const hasEmptyValues = Object.values(record).some(value => value === '');
-      
+        
         // Check for valid date
         const date = new Date(record.activation_date);
         const hasInvalidDate = isNaN(date.getTime());
-      
+        
         if (hasEmptyValues || hasInvalidDate) {
           console.error(`Skipping record with ${hasEmptyValues ? 'empty values' : 'invalid date'}: ${JSON.stringify(record)}`);
+          return false;
         } else {
-          usersToDeploy.push(record);
+          return true;
         }
       });
-      
-      console.log("Users to deploy: ", usersToDeploy);
 
+      console.log("Users to deploy: ", usersToDeploy);
       /*
       const filteredRecords = records.filter(record => {
         // Check for empty values

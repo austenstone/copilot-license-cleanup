@@ -22105,7 +22105,7 @@ const github = __importStar(__nccwpck_require__(5438));
 const moment_1 = __importDefault(__nccwpck_require__(9623));
 const fs_1 = __nccwpck_require__(7147);
 const path_1 = __importDefault(__nccwpck_require__(1017));
-const csv_parse_1 = __nccwpck_require__(6107);
+const sync_1 = __nccwpck_require__(4393);
 const artifact = __importStar(__nccwpck_require__(2605));
 const request_error_1 = __nccwpck_require__(537);
 function getInputs() {
@@ -22273,23 +22273,22 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             }
             const fileContent = (0, fs_1.readFileSync)(csvFilePath, { encoding: 'utf-8' });
             core.info(`File content: ${fileContent}`);
-            const records = (0, csv_parse_1.parse)(fileContent, {
-                delimiter: ',',
+            const records = (0, sync_1.parse)(fileContent, {
                 columns: true,
                 skip_empty_lines: true,
                 trim: true,
             });
-            let usersToDeploy = [];
-            records.forEach(record => {
+            const usersToDeploy = records.filter(record => {
                 core.info(`Record: ${JSON.stringify(record)}`);
                 const hasEmptyValues = Object.values(record).some(value => value === '');
                 const date = new Date(record.activation_date);
                 const hasInvalidDate = isNaN(date.getTime());
                 if (hasEmptyValues || hasInvalidDate) {
                     console.error(`Skipping record with ${hasEmptyValues ? 'empty values' : 'invalid date'}: ${JSON.stringify(record)}`);
+                    return false;
                 }
                 else {
-                    usersToDeploy.push(record);
+                    return true;
                 }
             });
             console.log("Users to deploy: ", usersToDeploy);
@@ -22471,17 +22470,11 @@ module.exports = require("zlib");
 
 /***/ }),
 
-/***/ 6107:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ 4393:
+/***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
-
-var stream = __nccwpck_require__(2781);
-
-const is_object = function(obj){
-  return (typeof obj === 'object' && obj !== null && !Array.isArray(obj));
-};
 
 class CsvError extends Error {
   constructor(code, message, options, ...contexts) {
@@ -22499,6 +22492,10 @@ class CsvError extends Error {
     }
   }
 }
+
+const is_object = function(obj){
+  return (typeof obj === 'object' && obj !== null && !Array.isArray(obj));
+};
 
 const normalize_columns_array = function(columns){
   const normalizedColumns = [];
@@ -23788,114 +23785,28 @@ const transform = function(original_options = {}) {
   };
 };
 
-class Parser extends stream.Transform {
-  constructor(opts = {}){
-    super({...{readableObjectMode: true}, ...opts, encoding: null});
-    this.api = transform(opts);
-    this.api.options.on_skip = (err, chunk) => {
-      this.emit('skip', err, chunk);
-    };
-    // Backward compatibility
-    this.state = this.api.state;
-    this.options = this.api.options;
-    this.info = this.api.info;
+const parse = function(data, opts={}){
+  if(typeof data === 'string'){
+    data = Buffer.from(data);
   }
-  // Implementation of `Transform._transform`
-  _transform(buf, _, callback){
-    if(this.state.stop === true){
-      return;
+  const records = opts && opts.objname ? {} : [];
+  const parser = transform(opts);
+  const push = (record) => {
+    if(parser.options.objname === undefined)
+      records.push(record);
+    else {
+      records[record[0]] = record[1];
     }
-    const err = this.api.parse(buf, false, (record) => {
-      this.push(record);
-    }, () => {
-      this.push(null);
-      this.end();
-      // Fix #333 and break #410
-      //   ko: api.stream.iterator.coffee
-      //   ko with v21.4.0, ok with node v20.5.1: api.stream.finished # aborted (with generate())
-      //   ko: api.stream.finished # aborted (with Readable)
-      // this.destroy()
-      // Fix #410 and partially break #333
-      //   ok: api.stream.iterator.coffee
-      //   ok: api.stream.finished # aborted (with generate())
-      //   broken: api.stream.finished # aborted (with Readable)
-      this.on('end', this.destroy);
-    });
-    if(err !== undefined){
-      this.state.stop = true;
-    }
-    callback(err);
-  }
-  // Implementation of `Transform._flush`
-  _flush(callback){
-    if(this.state.stop === true){
-      return;
-    }
-    const err = this.api.parse(undefined, true, (record) => {
-      this.push(record);
-    }, () => {
-      this.push(null);
-      this.on('end', this.destroy);
-    });
-    callback(err);
-  }
-}
-
-const parse = function(){
-  let data, options, callback;
-  for(const i in arguments){
-    const argument = arguments[i];
-    const type = typeof argument;
-    if(data === undefined && (typeof argument === 'string' || Buffer.isBuffer(argument))){
-      data = argument;
-    }else if(options === undefined && is_object(argument)){
-      options = argument;
-    }else if(callback === undefined && type === 'function'){
-      callback = argument;
-    }else {
-      throw new CsvError('CSV_INVALID_ARGUMENT', [
-        'Invalid argument:',
-        `got ${JSON.stringify(argument)} at index ${i}`
-      ], options || {});
-    }
-  }
-  const parser = new Parser(options);
-  if(callback){
-    const records = options === undefined || options.objname === undefined ? [] : {};
-    parser.on('readable', function(){
-      let record;
-      while((record = this.read()) !== null){
-        if(options === undefined || options.objname === undefined){
-          records.push(record);
-        }else {
-          records[record[0]] = record[1];
-        }
-      }
-    });
-    parser.on('error', function(err){
-      callback(err, undefined, parser.api.__infoDataSet());
-    });
-    parser.on('end', function(){
-      callback(undefined, records, parser.api.__infoDataSet());
-    });
-  }
-  if(data !== undefined){
-    const writer = function(){
-      parser.write(data);
-      parser.end();
-    };
-    // Support Deno, Rollup doesnt provide a shim for setImmediate
-    if(typeof setImmediate === 'function'){
-      setImmediate(writer);
-    }else {
-      setTimeout(writer, 0);
-    }
-  }
-  return parser;
+  };
+  const close = () => {};
+  const err1 = parser.parse(data, false, push, close);
+  if(err1 !== undefined) throw err1;
+  const err2 = parser.parse(undefined, true, push, close);
+  if(err2 !== undefined) throw err2;
+  return records;
 };
 
 exports.CsvError = CsvError;
-exports.Parser = Parser;
 exports.parse = parse;
 
 
