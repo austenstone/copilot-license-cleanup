@@ -236,7 +236,8 @@ const run = async (): Promise<void> => {
       }
     
       const fileContent = readFileSync(csvFilePath, { encoding: 'utf-8' });
-
+      core.info(`File content: ${fileContent}`)
+      
       const records = parse(fileContent, { 
         delimiter: ',',
         columns: true,

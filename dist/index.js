@@ -22272,6 +22272,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 return;
             }
             const fileContent = (0, fs_1.readFileSync)(csvFilePath, { encoding: 'utf-8' });
+            core.info(`File content: ${fileContent}`);
             const records = (0, csv_parse_1.parse)(fileContent, {
                 delimiter: ',',
                 columns: true,
