@@ -217,14 +217,14 @@ const run = async (): Promise<void> => {
   if (input.deployUsers) {
     core.info(`Fetching all deployment information from CSV ${input.deployUsersCsv}...`);
     // Get users from deployUsersCsv Input
-    /*
+    
     type UserList = {
       organization: string;
       deployment_group: string;
       login: string;
       activation_date: string;
     };
-    */
+    
 
     try {  
       const csvFilePath = path.resolve(process.env.GITHUB_WORKSPACE || __dirname, input.deployUsersCsv);
@@ -243,8 +243,27 @@ const run = async (): Promise<void> => {
         skip_empty_lines: true,
         trim: true,
       });
-  
-      const usersToDeploy = records.filter(record => {
+
+      let usersToDeploy: UserList[] = [];
+
+      records.forEach(record => {
+        // Check for empty values
+        const hasEmptyValues = Object.values(record).some(value => value === '');
+      
+        // Check for valid date
+        const date = new Date(record.activation_date);
+        const hasInvalidDate = isNaN(date.getTime());
+      
+        if (hasEmptyValues || hasInvalidDate) {
+          console.error(`Skipping record with ${hasEmptyValues ? 'empty values' : 'invalid date'}: ${JSON.stringify(record)}`);
+          usersToDeploy.push(record);
+        }
+      });
+      
+      console.log("Users to deploy: ", usersToDeploy);
+
+      /*
+      const filteredRecords = records.filter(record => {
         // Check for empty values
         const hasEmptyValues = Object.values(record).some(value => value === '');
         if (hasEmptyValues) {
@@ -263,6 +282,7 @@ const run = async (): Promise<void> => {
       });
   
       console.log("Result: ", usersToDeploy); 
+      */
     } catch (err) {
       console.error(err);
     }

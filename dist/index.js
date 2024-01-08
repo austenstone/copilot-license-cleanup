@@ -22278,20 +22278,17 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 skip_empty_lines: true,
                 trim: true,
             });
-            const usersToDeploy = records.filter(record => {
+            let usersToDeploy = [];
+            records.forEach(record => {
                 const hasEmptyValues = Object.values(record).some(value => value === '');
-                if (hasEmptyValues) {
-                    console.error(`Skipping record with empty values: ${JSON.stringify(record)}`);
-                    return false;
-                }
                 const date = new Date(record.activation_date);
-                if (isNaN(date.getTime())) {
-                    console.error(`Skipping record with invalid date: ${JSON.stringify(record)}`);
-                    return false;
+                const hasInvalidDate = isNaN(date.getTime());
+                if (hasEmptyValues || hasInvalidDate) {
+                    console.error(`Skipping record with ${hasEmptyValues ? 'empty values' : 'invalid date'}: ${JSON.stringify(record)}`);
+                    usersToDeploy.push(record);
                 }
-                return true;
             });
-            console.log("Result: ", usersToDeploy);
+            console.log("Users to deploy: ", usersToDeploy);
         }
         catch (err) {
             console.error(err);
