@@ -22264,6 +22264,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         }
     }
     if (input.deployUsers) {
+        core.info(`Fetching all deployment information from CSV ${input.deployUsersCsv}...`);
         try {
             const csvFilePath = path_1.default.resolve(__dirname, input.deployUsersCsv);
             if (!(0, fs_1.existsSync)(csvFilePath)) {

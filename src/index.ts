@@ -215,7 +215,7 @@ const run = async (): Promise<void> => {
   }
 
   if (input.deployUsers) {
-
+    core.info(`Fetching all deployment information from CSV ${input.deployUsersCsv}...`);
     // Get users from deployUsersCsv Input
     /*
     type UserList = {
