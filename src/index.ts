@@ -247,6 +247,9 @@ const run = async (): Promise<void> => {
       let usersToDeploy: UserList[] = [];
 
       records.forEach(record => {
+        // TODO - Remove after troubleshooting
+        console.log("Record: ", record)
+
         // Check for empty values
         const hasEmptyValues = Object.values(record).some(value => value === '');
       
