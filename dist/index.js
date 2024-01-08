@@ -22285,6 +22285,8 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 const hasInvalidDate = isNaN(date.getTime());
                 if (hasEmptyValues || hasInvalidDate) {
                     console.error(`Skipping record with ${hasEmptyValues ? 'empty values' : 'invalid date'}: ${JSON.stringify(record)}`);
+                }
+                else {
                     usersToDeploy.push(record);
                 }
             });

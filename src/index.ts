@@ -256,6 +256,7 @@ const run = async (): Promise<void> => {
       
         if (hasEmptyValues || hasInvalidDate) {
           console.error(`Skipping record with ${hasEmptyValues ? 'empty values' : 'invalid date'}: ${JSON.stringify(record)}`);
+        } else {
           usersToDeploy.push(record);
         }
       });
