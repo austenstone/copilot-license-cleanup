@@ -231,7 +231,7 @@ const run = async (): Promise<void> => {
     
       // Check if the file exists before trying to read it
       if (!existsSync(csvFilePath)) {
-        console.error(`File not found: ${csvFilePath}`);
+        core.setFailed(`File not found: ${csvFilePath}`);
         return;
       }
     
