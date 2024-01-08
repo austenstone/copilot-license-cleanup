@@ -22268,7 +22268,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         try {
             const csvFilePath = path_1.default.resolve(__dirname, input.deployUsersCsv);
             if (!(0, fs_1.existsSync)(csvFilePath)) {
-                console.error(`File not found: ${csvFilePath}`);
+                core.setFailed(`File not found: ${csvFilePath}`);
                 return;
             }
             const fileContent = (0, fs_1.readFileSync)(csvFilePath, { encoding: 'utf-8' });
