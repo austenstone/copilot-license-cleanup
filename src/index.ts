@@ -1,7 +1,9 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import momemt from 'moment';
-import { writeFileSync } from 'fs';
+import { writeFileSync, readFileSync, existsSync } from 'fs';
+import path from 'path';
+import { parse } from 'csv-parse';
 import * as artifact from '@actions/artifact';
 import type { Endpoints } from "@octokit/types";
 import { SummaryTableRow } from '@actions/core/lib/summary';
@@ -16,6 +18,9 @@ interface Input {
   inactiveDays: number;
   jobSummary: boolean;
   csv: boolean;
+  deployUsers: boolean;
+  deployUsersCsv: string;
+  deployValidationTime: number;
 }
 
 export function getInputs(): Input {
@@ -28,6 +33,9 @@ export function getInputs(): Input {
   result.inactiveDays = parseInt(core.getInput('inactive-days'));
   result.jobSummary = core.getBooleanInput('job-summary');
   result.csv = core.getBooleanInput('csv');
+  result.deployUsers = core.getBooleanInput('deploy-users');
+  result.deployUsersCsv = core.getInput('deploy-users-csv');
+  result.deployValidationTime = parseInt(core.getInput('deploy-validation-time'));
   return result;
 }
 
@@ -46,7 +54,6 @@ const run = async (): Promise<void> => {
   let allInactiveSeats: SeatWithOrg[] = [];
   let allRemovedSeatsCount = 0;
   let allSeatsCount = 0;
-
 
   const octokit = github.getOctokit(input.token);
 
@@ -205,6 +212,62 @@ const run = async (): Promise<void> => {
         core.summary.addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${org}/settings/copilot/seat_management`)
         .write()
     }
+  }
+
+  if (input.deployUsers) {
+
+    // Get users from deployUsersCsv Input
+    /*
+    type UserList = {
+      organization: string;
+      deployment_group: string;
+      login: string;
+      activation_date: string;
+    };
+    */
+
+    try {  
+      const csvFilePath = path.resolve(__dirname, input.deployUsersCsv);
+    
+      // Check if the file exists before trying to read it
+      if (!existsSync(csvFilePath)) {
+        console.error(`File not found: ${csvFilePath}`);
+        return;
+      }
+    
+      const fileContent = readFileSync(csvFilePath, { encoding: 'utf-8' });
+
+      const records = parse(fileContent, { 
+        delimiter: ',',
+        columns: true,
+        skip_empty_lines: true,
+        trim: true,
+      });
+  
+      const usersToDeploy = records.filter(record => {
+        // Check for empty values
+        const hasEmptyValues = Object.values(record).some(value => value === '');
+        if (hasEmptyValues) {
+          console.error(`Skipping record with empty values: ${JSON.stringify(record)}`);
+          return false;
+        }
+  
+        // Check for valid date
+        const date = new Date(record.activation_date);
+        if (isNaN(date.getTime())) {
+          console.error(`Skipping record with invalid date: ${JSON.stringify(record)}`);
+          return false;
+        }
+  
+        return true;
+      });
+  
+      console.log("Result: ", usersToDeploy); 
+    } catch (err) {
+      console.error(err);
+    }
+
+
   }
 
   // Write CSV if requested (for all orgs)
