@@ -227,7 +227,7 @@ const run = async (): Promise<void> => {
     */
 
     try {  
-      const csvFilePath = path.resolve(__dirname, input.deployUsersCsv);
+      const csvFilePath = path.resolve(process.env.GITHUB_WORKSPACE || __dirname, input.deployUsersCsv);
     
       // Check if the file exists before trying to read it
       if (!existsSync(csvFilePath)) {
