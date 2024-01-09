@@ -263,9 +263,10 @@ const run = async (): Promise<void> => {
           // input.deployValidationTime is equal to 3 days by default.
           // Time is not important.  Meaning that if today is 2023-09-05, then 2023-09-02 is valid regardless of time of day.
           const today = new Date();
+          const currentTime = today.getTime();
           const validationTime = today.setDate(today.getDate() - input.deployValidationTime);
-          const activationTime = date.getTime();
-          const isDateWithinWindow = validationTime <= activationTime;
+          const activationTime = date.getTime();  // date = record.activation_date
+          const isDateWithinWindow = validationTime <= activationTime  && activationTime <= currentTime;;
 
           if (!isDateWithinWindow) {
             console.error(`Skipping record due to activation date outside ${input.deployValidationTime} day window: ${JSON.stringify(record)}`);

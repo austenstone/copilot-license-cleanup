@@ -22289,9 +22289,11 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 }
                 else {
                     const today = new Date();
+                    const currentTime = today.getTime();
                     const validationTime = today.setDate(today.getDate() - input.deployValidationTime);
                     const activationTime = date.getTime();
-                    const isDateWithinWindow = validationTime <= activationTime;
+                    const isDateWithinWindow = validationTime <= activationTime && activationTime <= currentTime;
+                    ;
                     if (!isDateWithinWindow) {
                         console.error(`Skipping record due to activation date outside ${input.deployValidationTime} day window: ${JSON.stringify(record)}`);
                         return false;
