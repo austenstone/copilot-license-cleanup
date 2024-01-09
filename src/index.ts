@@ -23,6 +23,88 @@ interface Input {
   deployValidationTime: number;
 }
 
+type SeatWithOrg = { 
+  last_activity_at: string | null; 
+  created_at: string; 
+  organization: string; 
+  assignee: { login: string; avatar_url: string; }; 
+  last_activity_editor: string | null; 
+};
+
+// Needed to pass the Octokit type from @actions/github to other functions
+type Octokit = ReturnType<typeof github.getOctokit>;
+
+// Create a Map to store data per organization
+let orgData = new Map();  // Map<org, { seats: [], inactiveSeats: [] }>
+
+// Function to get all seats in an organization
+// Returns an array of seats 
+async function getOrgData(org: string, octokit: Octokit) {
+  const seats = await core.group('Fetching GitHub Copilot seats for ' + org, async () => {
+
+    // No type exists for copilot endpoint yet
+    let _seats: Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]['data']['seats'] = [], totalSeats = 0, page = 1;
+    do {
+      try {
+        const response = await octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
+          org: org
+        });
+        totalSeats = response.data.total_seats;
+        _seats = _seats.concat(response.data.seats);
+        page++;
+      } catch (error) {
+        if (error instanceof RequestError && error.message === "Copilot Business is not enabled for this organization.") {
+          core.error((error as Error).message + ` (${org})`);
+          break;
+        } else if (error instanceof RequestError && error.status === 404) {
+          core.error((error as Error).message + ` (${org}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
+          break;
+        } else {
+          throw error;
+        }
+      }
+    } while (_seats.length < totalSeats);
+    core.info(`Found ${_seats.length} seats`)
+    core.info(JSON.stringify(_seats, null, 2));
+    return _seats;
+  });
+
+  // Save seat data to the orgData Map by org id and then return seats
+  orgData.set(org, { seats: seats });
+  return seats;
+
+}
+
+function getInactiveSeats(org: string, seats, inactiveDays: number) {
+  const msToDays = (d) => Math.ceil(d / (1000 * 3600 * 24));
+
+  const now = new Date();
+  const inactiveSeats = seats.filter(seat => {
+    if (seat.last_activity_at === null || seat.last_activity_at === undefined) {
+      const created = new Date(seat.created_at);
+      const diff = now.getTime() - created.getTime();
+      return msToDays(diff) > inactiveDays;
+    }
+    const lastActive = new Date(seat.last_activity_at);
+    const diff = now.getTime() - lastActive.getTime();
+    return msToDays(diff) > inactiveDays;
+  }).sort((a, b) => (
+    a.last_activity_at === null || a.last_activity_at === undefined || b.last_activity_at === null || b.last_activity_at === undefined ?
+    -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()
+  ));
+
+  core.info(`Found ${inactiveSeats.length} inactive seats`);
+
+  const inactiveSeatsWithOrg = inactiveSeats.map(seat => ({ ...seat, organization: org } as SeatWithOrg));
+
+  // Save inactive seat data to the orgData map and return inactive seats
+  const orgDataEntry = orgData.get(org) || {};
+  orgData.set(org, { ...orgDataEntry, inactiveSeats: inactiveSeatsWithOrg });
+
+  return inactiveSeatsWithOrg;
+
+}
+
 export function getInputs(): Input {
   const result = {} as Input;
   result.token = core.getInput('github-token');
@@ -44,6 +126,7 @@ const run = async (): Promise<void> => {
   let organizations: string[] = [];
   let hasNextPage = false;
   let afterCursor: string | undefined = undefined;
+  /*
   type SeatWithOrg = { 
     last_activity_at: string | null; 
     created_at: string; 
@@ -51,6 +134,7 @@ const run = async (): Promise<void> => {
     assignee: { login: string; avatar_url: string; }; 
     last_activity_editor: string | null; 
   };
+  */
   let allInactiveSeats: SeatWithOrg[] = [];
   let allRemovedSeatsCount = 0;
   let allSeatsCount = 0;
@@ -107,7 +191,9 @@ const run = async (): Promise<void> => {
 
   for (const org of organizations) {
     // Process each organization
-    const seats = await core.group('Fetching GitHub Copilot seats for ' + org, async () => {
+    const seats = await getOrgData(org, octokit);
+    
+    /*const seats = await core.group('Fetching GitHub Copilot seats for ' + org, async () => {
 
       // No type exists for copilot endpoint yet
       let _seats: Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]['data']['seats'] = [], totalSeats = 0, page = 1;
@@ -135,7 +221,9 @@ const run = async (): Promise<void> => {
       core.info(JSON.stringify(_seats, null, 2));
       return _seats;
     });
+    */
 
+    /*
     const msToDays = (d) => Math.ceil(d / (1000 * 3600 * 24));
 
     const now = new Date();
@@ -152,9 +240,16 @@ const run = async (): Promise<void> => {
       a.last_activity_at === null || a.last_activity_at === undefined || b.last_activity_at === null || b.last_activity_at === undefined ?
       -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()
     ));
+    */
 
+    const inactiveSeats = getInactiveSeats(org, seats, input.inactiveDays);
+
+    /*
     const inactiveSeatsWithOrg = inactiveSeats.map(seat => ({ ...seat, organization: org } as SeatWithOrg));
     allInactiveSeats = [...allInactiveSeats, ...inactiveSeatsWithOrg];
+    */
+
+    allInactiveSeats = [...allInactiveSeats, ...inactiveSeats];
     allSeatsCount += seats.length;
 
     if (input.removeInactive) {
@@ -260,8 +355,6 @@ const run = async (): Promise<void> => {
         } else {
           
           // Check that record.activation_date is within input.deployValidationTime days from today.
-          // input.deployValidationTime is equal to 3 days by default.
-          // Time is not important.  Meaning that if today is 2023-09-05, then 2023-09-02 is valid regardless of time of day.
           const today = new Date();
           const currentTime = today.getTime();
           const validationTime = today.setDate(today.getDate() - input.deployValidationTime);
@@ -280,6 +373,33 @@ const run = async (): Promise<void> => {
       });
 
       console.log("Users to deploy: ", usersToDeploy);
+
+      usersToDeploy.forEach(user => {
+        console.log(user);
+
+        // TODO - Check if user exists as organization member
+        // TODO - Check if user exists in the enterprise
+        // TODO - Check if user is already deployed.  If so, skip.
+      });
+
+      // TODO - Capture groups above 
+      // TODO - Add some API limits calculations (just to ensure we don't hit the limit unexpectedly)
+        // i.e. you could have 10,000 users in an org.  Don't check them one by one.  (10,000 users = 100 API calls with pagination)
+        // Split out get users by org into a separate function and data structure when checking for use in deployment
+        // I also need this data to show active users in the summary output for deployments
+        // I should also capture inactive users per deployment group as an output... So I can take action on them later.
+      // TODO - Check if user exists as organization member
+      // TODO - Check if user exists in the enterprise
+      // TODO - Allow add to team?  
+      // TODO - Check if user is already deployed.  If so, skip.
+      // TODO - Add ability to enable copilot for user
+      // TODO - Add example save deployed users to JSON as a file
+      // TODO - Add Summary Output - Number of users deployed per group, active or not?  
+      // TODO - Add CSV Output
+      // TODO - Make the CSV policy - Add ability for it to be source of truth and remove users not in CSV
+      // TODO - Review Readme Org admin requirement - Potential solution: https://github.com/some-natalie/gh-org-admin-promote
+
+      
 
     } catch (err) {
       console.error(err);

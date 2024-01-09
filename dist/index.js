@@ -22108,6 +22108,62 @@ const path_1 = __importDefault(__nccwpck_require__(1017));
 const sync_1 = __nccwpck_require__(4393);
 const artifact = __importStar(__nccwpck_require__(2605));
 const request_error_1 = __nccwpck_require__(537);
+let orgData = new Map();
+function getOrgData(org, octokit) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const seats = yield core.group('Fetching GitHub Copilot seats for ' + org, () => __awaiter(this, void 0, void 0, function* () {
+            let _seats = [], totalSeats = 0, page = 1;
+            do {
+                try {
+                    const response = yield octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
+                        org: org
+                    });
+                    totalSeats = response.data.total_seats;
+                    _seats = _seats.concat(response.data.seats);
+                    page++;
+                }
+                catch (error) {
+                    if (error instanceof request_error_1.RequestError && error.message === "Copilot Business is not enabled for this organization.") {
+                        core.error(error.message + ` (${org})`);
+                        break;
+                    }
+                    else if (error instanceof request_error_1.RequestError && error.status === 404) {
+                        core.error(error.message + ` (${org}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
+                        break;
+                    }
+                    else {
+                        throw error;
+                    }
+                }
+            } while (_seats.length < totalSeats);
+            core.info(`Found ${_seats.length} seats`);
+            core.info(JSON.stringify(_seats, null, 2));
+            return _seats;
+        }));
+        orgData.set(org, { seats: seats });
+        return seats;
+    });
+}
+function getInactiveSeats(org, seats, inactiveDays) {
+    const msToDays = (d) => Math.ceil(d / (1000 * 3600 * 24));
+    const now = new Date();
+    const inactiveSeats = seats.filter(seat => {
+        if (seat.last_activity_at === null || seat.last_activity_at === undefined) {
+            const created = new Date(seat.created_at);
+            const diff = now.getTime() - created.getTime();
+            return msToDays(diff) > inactiveDays;
+        }
+        const lastActive = new Date(seat.last_activity_at);
+        const diff = now.getTime() - lastActive.getTime();
+        return msToDays(diff) > inactiveDays;
+    }).sort((a, b) => (a.last_activity_at === null || a.last_activity_at === undefined || b.last_activity_at === null || b.last_activity_at === undefined ?
+        -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()));
+    core.info(`Found ${inactiveSeats.length} inactive seats`);
+    const inactiveSeatsWithOrg = inactiveSeats.map(seat => (Object.assign(Object.assign({}, seat), { organization: org })));
+    const orgDataEntry = orgData.get(org) || {};
+    orgData.set(org, Object.assign(Object.assign({}, orgDataEntry), { inactiveSeats: inactiveSeatsWithOrg }));
+    return inactiveSeatsWithOrg;
+}
 function getInputs() {
     const result = {};
     result.token = core.getInput('github-token');
@@ -22163,50 +22219,9 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         organizations = input.org.split(',').map(org => org.trim());
     }
     for (const org of organizations) {
-        const seats = yield core.group('Fetching GitHub Copilot seats for ' + org, () => __awaiter(void 0, void 0, void 0, function* () {
-            let _seats = [], totalSeats = 0, page = 1;
-            do {
-                try {
-                    const response = yield octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
-                        org: org
-                    });
-                    totalSeats = response.data.total_seats;
-                    _seats = _seats.concat(response.data.seats);
-                    page++;
-                }
-                catch (error) {
-                    if (error instanceof request_error_1.RequestError && error.message === "Copilot Business is not enabled for this organization.") {
-                        core.error(error.message + ` (${org})`);
-                        break;
-                    }
-                    else if (error instanceof request_error_1.RequestError && error.status === 404) {
-                        core.error(error.message + ` (${org}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
-                        break;
-                    }
-                    else {
-                        throw error;
-                    }
-                }
-            } while (_seats.length < totalSeats);
-            core.info(`Found ${_seats.length} seats`);
-            core.info(JSON.stringify(_seats, null, 2));
-            return _seats;
-        }));
-        const msToDays = (d) => Math.ceil(d / (1000 * 3600 * 24));
-        const now = new Date();
-        const inactiveSeats = seats.filter(seat => {
-            if (seat.last_activity_at === null || seat.last_activity_at === undefined) {
-                const created = new Date(seat.created_at);
-                const diff = now.getTime() - created.getTime();
-                return msToDays(diff) > input.inactiveDays;
-            }
-            const lastActive = new Date(seat.last_activity_at);
-            const diff = now.getTime() - lastActive.getTime();
-            return msToDays(diff) > input.inactiveDays;
-        }).sort((a, b) => (a.last_activity_at === null || a.last_activity_at === undefined || b.last_activity_at === null || b.last_activity_at === undefined ?
-            -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()));
-        const inactiveSeatsWithOrg = inactiveSeats.map(seat => (Object.assign(Object.assign({}, seat), { organization: org })));
-        allInactiveSeats = [...allInactiveSeats, ...inactiveSeatsWithOrg];
+        const seats = yield getOrgData(org, octokit);
+        const inactiveSeats = getInactiveSeats(org, seats, input.inactiveDays);
+        allInactiveSeats = [...allInactiveSeats, ...inactiveSeats];
         allSeatsCount += seats.length;
         if (input.removeInactive) {
             const inactiveSeatsAssignedIndividually = inactiveSeats.filter(seat => !seat.assigning_team);
@@ -22302,6 +22317,9 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 }
             });
             console.log("Users to deploy: ", usersToDeploy);
+            usersToDeploy.forEach(user => {
+                console.log(user);
+            });
         }
         catch (err) {
             console.error(err);
