@@ -65,7 +65,7 @@ async function getOrgData(org: string, octokit: Octokit) {
       }
     } while (_seats.length < totalSeats);
     core.info(`Found ${_seats.length} seats`)
-    core.info(JSON.stringify(_seats, null, 2));
+    core.debug(JSON.stringify(_seats, null, 2));
     return _seats;
   });
 
@@ -94,6 +94,7 @@ function getInactiveSeats(org: string, seats, inactiveDays: number) {
   ));
 
   core.info(`Found ${inactiveSeats.length} inactive seats`);
+  core.debug(JSON.stringify(inactiveSeats, null, 2));
 
   const inactiveSeatsWithOrg = inactiveSeats.map(seat => ({ ...seat, organization: org } as SeatWithOrg));
 
@@ -126,15 +127,6 @@ const run = async (): Promise<void> => {
   let organizations: string[] = [];
   let hasNextPage = false;
   let afterCursor: string | undefined = undefined;
-  /*
-  type SeatWithOrg = { 
-    last_activity_at: string | null; 
-    created_at: string; 
-    organization: string; 
-    assignee: { login: string; avatar_url: string; }; 
-    last_activity_editor: string | null; 
-  };
-  */
   let allInactiveSeats: SeatWithOrg[] = [];
   let allRemovedSeatsCount = 0;
   let allSeatsCount = 0;
@@ -181,7 +173,8 @@ const run = async (): Promise<void> => {
       
     } while (hasNextPage);
 
-    core.info(`Found ${organizations.length} organizations: ${organizations.join(', ')}`);
+    core.info(`Found ${organizations.length} organizations.`);
+    core.debug(`Organization List: ${organizations.join(', ')}`);
 
   } else {
     // Split org input by comma (to allow multiple orgs)
@@ -192,62 +185,8 @@ const run = async (): Promise<void> => {
   for (const org of organizations) {
     // Process each organization
     const seats = await getOrgData(org, octokit);
-    
-    /*const seats = await core.group('Fetching GitHub Copilot seats for ' + org, async () => {
-
-      // No type exists for copilot endpoint yet
-      let _seats: Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]['data']['seats'] = [], totalSeats = 0, page = 1;
-      do {
-        try {
-          const response = await octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
-            org: org
-          });
-          totalSeats = response.data.total_seats;
-          _seats = _seats.concat(response.data.seats);
-          page++;
-        } catch (error) {
-          if (error instanceof RequestError && error.message === "Copilot Business is not enabled for this organization.") {
-            core.error((error as Error).message + ` (${org})`);
-            break;
-          } else if (error instanceof RequestError && error.status === 404) {
-            core.error((error as Error).message + ` (${org}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
-            break;
-          } else {
-            throw error;
-          }
-        }
-      } while (_seats.length < totalSeats);
-      core.info(`Found ${_seats.length} seats`)
-      core.info(JSON.stringify(_seats, null, 2));
-      return _seats;
-    });
-    */
-
-    /*
-    const msToDays = (d) => Math.ceil(d / (1000 * 3600 * 24));
-
-    const now = new Date();
-    const inactiveSeats = seats.filter(seat => {
-      if (seat.last_activity_at === null || seat.last_activity_at === undefined) {
-        const created = new Date(seat.created_at);
-        const diff = now.getTime() - created.getTime();
-        return msToDays(diff) > input.inactiveDays;
-      }
-      const lastActive = new Date(seat.last_activity_at);
-      const diff = now.getTime() - lastActive.getTime();
-      return msToDays(diff) > input.inactiveDays;
-    }).sort((a, b) => (
-      a.last_activity_at === null || a.last_activity_at === undefined || b.last_activity_at === null || b.last_activity_at === undefined ?
-      -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()
-    ));
-    */
 
     const inactiveSeats = getInactiveSeats(org, seats, input.inactiveDays);
-
-    /*
-    const inactiveSeatsWithOrg = inactiveSeats.map(seat => ({ ...seat, organization: org } as SeatWithOrg));
-    allInactiveSeats = [...allInactiveSeats, ...inactiveSeatsWithOrg];
-    */
 
     allInactiveSeats = [...allInactiveSeats, ...inactiveSeats];
     allSeatsCount += seats.length;
@@ -372,10 +311,11 @@ const run = async (): Promise<void> => {
 
       });
 
-      console.log("Users to deploy: ", usersToDeploy);
+      core.info(`Found ${usersToDeploy.length} users to deploy.`);
+      core.debug(JSON.stringify(usersToDeploy, null, 2));
 
       usersToDeploy.forEach(user => {
-        console.log(user);
+        console.log("User: " + user);
 
         // TODO - Check if user exists as organization member
         // TODO - Check if user exists in the enterprise

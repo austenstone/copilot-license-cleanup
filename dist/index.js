@@ -22137,7 +22137,7 @@ function getOrgData(org, octokit) {
                 }
             } while (_seats.length < totalSeats);
             core.info(`Found ${_seats.length} seats`);
-            core.info(JSON.stringify(_seats, null, 2));
+            core.debug(JSON.stringify(_seats, null, 2));
             return _seats;
         }));
         orgData.set(org, { seats: seats });
@@ -22159,6 +22159,7 @@ function getInactiveSeats(org, seats, inactiveDays) {
     }).sort((a, b) => (a.last_activity_at === null || a.last_activity_at === undefined || b.last_activity_at === null || b.last_activity_at === undefined ?
         -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()));
     core.info(`Found ${inactiveSeats.length} inactive seats`);
+    core.debug(JSON.stringify(inactiveSeats, null, 2));
     const inactiveSeatsWithOrg = inactiveSeats.map(seat => (Object.assign(Object.assign({}, seat), { organization: org })));
     const orgDataEntry = orgData.get(org) || {};
     orgData.set(org, Object.assign(Object.assign({}, orgDataEntry), { inactiveSeats: inactiveSeatsWithOrg }));
@@ -22213,7 +22214,8 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             hasNextPage = response.enterprise.organizations.pageInfo.hasNextPage;
             afterCursor = response.enterprise.organizations.pageInfo.endCursor;
         } while (hasNextPage);
-        core.info(`Found ${organizations.length} organizations: ${organizations.join(', ')}`);
+        core.info(`Found ${organizations.length} organizations.`);
+        core.debug(`Organization List: ${organizations.join(', ')}`);
     }
     else {
         organizations = input.org.split(',').map(org => org.trim());
@@ -22316,9 +22318,10 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                     return true;
                 }
             });
-            console.log("Users to deploy: ", usersToDeploy);
+            core.info(`Found ${usersToDeploy.length} users to deploy.`);
+            core.debug(JSON.stringify(usersToDeploy, null, 2));
             usersToDeploy.forEach(user => {
-                console.log(user);
+                console.log("User: " + user);
             });
         }
         catch (err) {
