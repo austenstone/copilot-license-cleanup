@@ -301,7 +301,7 @@ const run = async (): Promise<void> => {
           const isDateWithinWindow = validationTime <= activationTime  && activationTime <= currentTime;;
 
           if (!isDateWithinWindow) {
-            core.error(`Skipping record due to activation date outside ${input.deployValidationTime} day window: ${JSON.stringify(record)}`);
+            core.info(`Skipping record due to activation date outside ${input.deployValidationTime} day window: ${JSON.stringify(record)}`);
             return false;
           }
 
