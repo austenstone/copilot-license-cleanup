@@ -22272,13 +22272,14 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 return;
             }
             const fileContent = (0, fs_1.readFileSync)(csvFilePath, { encoding: 'utf-8' });
-            core.info(`File content: ${fileContent}`);
+            core.debug(`File content: ${fileContent}`);
             const records = (0, sync_1.parse)(fileContent, {
                 columns: true,
                 skip_empty_lines: true,
                 trim: true,
             });
             const usersToDeploy = records.filter(record => {
+                core.debug(`Record: ${JSON.stringify(record)}`);
                 const hasEmptyValues = Object.values(record).some(value => value === '');
                 const date = new Date(record.activation_date);
                 const hasInvalidDate = isNaN(date.getTime());
@@ -22287,6 +22288,14 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                     return false;
                 }
                 else {
+                    const today = new Date();
+                    const validationTime = today.setDate(today.getDate() - input.deployValidationTime);
+                    const activationTime = date.getTime();
+                    const isDateWithinWindow = validationTime <= activationTime;
+                    if (!isDateWithinWindow) {
+                        console.error(`Skipping record due to activation date outside ${input.deployValidationTime} day window: ${JSON.stringify(record)}`);
+                        return false;
+                    }
                     return true;
                 }
             });

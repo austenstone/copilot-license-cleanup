@@ -236,7 +236,7 @@ const run = async (): Promise<void> => {
       }
     
       const fileContent = readFileSync(csvFilePath, { encoding: 'utf-8' });
-      core.info(`File content: ${fileContent}`)
+      core.debug(`File content: ${fileContent}`)
 
       const records: UserList[] = parse(fileContent, { 
         columns: true,
@@ -245,6 +245,8 @@ const run = async (): Promise<void> => {
       });
 
       const usersToDeploy: UserList[] = records.filter(record => {
+        core.debug(`Record: ${JSON.stringify(record)}`);
+
         // Check for empty values
         const hasEmptyValues = Object.values(record).some(value => value === '');
         
@@ -256,8 +258,24 @@ const run = async (): Promise<void> => {
           console.error(`Skipping record with ${hasEmptyValues ? 'empty values' : 'invalid date'}: ${JSON.stringify(record)}`);
           return false;
         } else {
+          
+          // Check that record.activation_date is within input.deployValidationTime days from today.
+          // input.deployValidationTime is equal to 3 days by default.
+          // Time is not important.  Meaning that if today is 2023-09-05, then 2023-09-02 is valid regardless of time of day.
+          const today = new Date();
+          const validationTime = today.setDate(today.getDate() - input.deployValidationTime);
+          const activationTime = date.getTime();
+          const isDateWithinWindow = validationTime <= activationTime;
+
+          if (!isDateWithinWindow) {
+            console.error(`Skipping record due to activation date outside ${input.deployValidationTime} day window: ${JSON.stringify(record)}`);
+            return false;
+          }
+
+          // Record is good and within deployment date window.  Add to usersToDeploy array
           return true;
         }
+
       });
 
       console.log("Users to deploy: ", usersToDeploy);
