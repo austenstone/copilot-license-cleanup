@@ -22301,7 +22301,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 const date = new Date(record.activation_date);
                 const hasInvalidDate = isNaN(date.getTime());
                 if (hasEmptyValues || hasInvalidDate) {
-                    console.error(`Skipping record with ${hasEmptyValues ? 'empty values' : 'invalid date'}: ${JSON.stringify(record)}`);
+                    core.error(`Skipping record with ${hasEmptyValues ? 'empty values' : 'invalid date'}: ${JSON.stringify(record)}`);
                     return false;
                 }
                 else {
@@ -22312,7 +22312,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                     const isDateWithinWindow = validationTime <= activationTime && activationTime <= currentTime;
                     ;
                     if (!isDateWithinWindow) {
-                        console.error(`Skipping record due to activation date outside ${input.deployValidationTime} day window: ${JSON.stringify(record)}`);
+                        core.error(`Skipping record due to activation date outside ${input.deployValidationTime} day window: ${JSON.stringify(record)}`);
                         return false;
                     }
                     return true;
@@ -22321,7 +22321,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             core.info(`Found ${usersToDeploy.length} users to deploy.`);
             core.debug(JSON.stringify(usersToDeploy, null, 2));
             usersToDeploy.forEach(user => {
-                console.log("User: " + user);
+                core.info(`Deploying user: ${JSON.stringify(user)}`);
             });
         }
         catch (err) {

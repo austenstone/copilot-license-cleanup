@@ -289,7 +289,7 @@ const run = async (): Promise<void> => {
         const hasInvalidDate = isNaN(date.getTime());
         
         if (hasEmptyValues || hasInvalidDate) {
-          console.error(`Skipping record with ${hasEmptyValues ? 'empty values' : 'invalid date'}: ${JSON.stringify(record)}`);
+          core.error(`Skipping record with ${hasEmptyValues ? 'empty values' : 'invalid date'}: ${JSON.stringify(record)}`);
           return false;
         } else {
           
@@ -301,7 +301,7 @@ const run = async (): Promise<void> => {
           const isDateWithinWindow = validationTime <= activationTime  && activationTime <= currentTime;;
 
           if (!isDateWithinWindow) {
-            console.error(`Skipping record due to activation date outside ${input.deployValidationTime} day window: ${JSON.stringify(record)}`);
+            core.error(`Skipping record due to activation date outside ${input.deployValidationTime} day window: ${JSON.stringify(record)}`);
             return false;
           }
 
@@ -315,7 +315,7 @@ const run = async (): Promise<void> => {
       core.debug(JSON.stringify(usersToDeploy, null, 2));
 
       usersToDeploy.forEach(user => {
-        console.log("User: " + user);
+        core.info(`Deploying user: ${JSON.stringify(user)}`);
 
         // TODO - Check if user exists as organization member
         // TODO - Check if user exists in the enterprise
