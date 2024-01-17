@@ -33,6 +33,13 @@ type SeatWithOrg = {
   last_activity_editor: string | null; 
 };
 
+type UserList = {
+  organization: string;
+  deployment_group: string;
+  login: string;
+  activation_date: string;
+};
+
 // Needed to pass the Octokit type from @actions/github to other functions
 type Octokit = ReturnType<typeof github.getOctokit>;
 
@@ -173,6 +180,7 @@ const run = async (): Promise<void> => {
   let allInactiveSeats: SeatWithOrg[] = [];
   let allRemovedSeatsCount = 0;
   let allSeatsCount = 0;
+  let deployedSeats: UserList[] = [];
   let deployedSeatsCount = 0;
 
   const octokit = github.getOctokit(input.token);
@@ -296,14 +304,6 @@ const run = async (): Promise<void> => {
     core.info(`Fetching all deployment information from CSV ${input.deployUsersCsv}...`);
     // Get users from deployUsersCsv Input
     
-    type UserList = {
-      organization: string;
-      deployment_group: string;
-      login: string;
-      activation_date: string;
-    };
-    
-
     try {  
       const csvFilePath = path.resolve(process.env.GITHUB_WORKSPACE || __dirname, input.deployUsersCsv);
     
@@ -428,6 +428,8 @@ const run = async (): Promise<void> => {
 
                   core.info(`Added ${response.data.seats_created} seats`);
                   deployedSeatsCount += response.data.seats_created;
+                  deployedSeats.push(user);
+
                 } catch (error) {
                   if (error instanceof RequestError && error.message === "Copilot Business is not enabled for this organization.") {
                     core.error((error as Error).message + ` (${user.organization})`);
@@ -504,6 +506,7 @@ const run = async (): Promise<void> => {
   core.setOutput('inactive-seat-count', allInactiveSeats.length.toString());
   core.setOutput('seat-count', allSeatsCount.toString());
   core.setOutput('removed-seats', allRemovedSeatsCount.toString());
+  core.setOutput('deployed-seats', JSON.stringify(deployedSeats));
   core.setOutput('deployed-seat-count', deployedSeatsCount.toString());
 };
 

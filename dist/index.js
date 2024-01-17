@@ -22228,6 +22228,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     let allInactiveSeats = [];
     let allRemovedSeatsCount = 0;
     let allSeatsCount = 0;
+    let deployedSeats = [];
     let deployedSeatsCount = 0;
     const octokit = github.getOctokit(input.token);
     if (input.enterprise && input.enterprise !== null) {
@@ -22408,6 +22409,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                                     });
                                     core.info(`Added ${response.data.seats_created} seats`);
                                     deployedSeatsCount += response.data.seats_created;
+                                    deployedSeats.push(user);
                                 }
                                 catch (error) {
                                     if (error instanceof request_error_1.RequestError && error.message === "Copilot Business is not enabled for this organization.") {
@@ -22462,6 +22464,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     core.setOutput('inactive-seat-count', allInactiveSeats.length.toString());
     core.setOutput('seat-count', allSeatsCount.toString());
     core.setOutput('removed-seats', allRemovedSeatsCount.toString());
+    core.setOutput('deployed-seats', JSON.stringify(deployedSeats));
     core.setOutput('deployed-seat-count', deployedSeatsCount.toString());
 });
 run();
