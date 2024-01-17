@@ -22360,7 +22360,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                     const seats = yield getOrgData(user.organization, octokit);
                     getInactiveSeats(user.organization, seats, input.inactiveDays);
                     if (!orgData.get(user.organization)) {
-                        core.setFailed(`Organization not found: ${user.organization}`);
+                        core.error(`Organization not found: ${user.organization}`);
                         return;
                     }
                 }

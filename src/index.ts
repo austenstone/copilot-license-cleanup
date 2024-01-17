@@ -364,7 +364,7 @@ const run = async (): Promise<void> => {
       
           // Confirm the org data was added
           if (!orgData.get(user.organization)) {
-            core.setFailed(`Organization not found: ${user.organization}`);
+            core.error(`Organization not found: ${user.organization}`);
             return;
           }
         } else {
