@@ -382,13 +382,13 @@ const run = async (): Promise<void> => {
             getInactiveSeats(user.organization, seats, input.inactiveDays);
           } catch (error) {
             core.error(`Failed to fetch data for organization ${user.organization}: ${error}`);
-            return;
+            continue;
           }
       
           // Confirm the org data was added
           if (!orgData.get(user.organization)) {
             core.error(`Organization not found: ${user.organization}`);
-            return;
+            continue;
           }
         } else {
           core.debug(`Organization Data found for ${user.organization}`);
@@ -397,7 +397,7 @@ const run = async (): Promise<void> => {
           if (user.login != orgData.get(user.organization)?.members.find(member => member.login === user.login)?.login) {
             // Note - Could do setFailed here, but it's not really a failure.  Just a warning.
             core.error(`User ${user.login} is not a member of ${user.organization}`);
-            return;
+            continue;
 
             /*
             // User not found in organization.  Add them.
@@ -414,7 +414,7 @@ const run = async (): Promise<void> => {
             //if (orgData.get(user.organization)?.seats.find(seat => seat.assignee.login === user.login)) {
             if ((orgData.get(user.organization)?.seats ?? []).find(seat => seat.assignee.login === user.login)) {
               core.info(`User ${user.login} already has a copilot seat in ${user.organization}`);
-              return;
+              continue;
             } else {
               // Assign a copilot Seat to the user
               // https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-business?apiVersion=2022-11-28#add-users-to-the-copilot-business-subscription-for-an-organization

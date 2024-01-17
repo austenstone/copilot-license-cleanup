@@ -22379,24 +22379,24 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                     }
                     catch (error) {
                         core.error(`Failed to fetch data for organization ${user.organization}: ${error}`);
-                        return;
+                        continue;
                     }
                     if (!orgData.get(user.organization)) {
                         core.error(`Organization not found: ${user.organization}`);
-                        return;
+                        continue;
                     }
                 }
                 else {
                     core.debug(`Organization Data found for ${user.organization}`);
                     if (user.login != ((_b = (_a = orgData.get(user.organization)) === null || _a === void 0 ? void 0 : _a.members.find(member => member.login === user.login)) === null || _b === void 0 ? void 0 : _b.login)) {
                         core.error(`User ${user.login} is not a member of ${user.organization}`);
-                        return;
+                        continue;
                     }
                     else {
                         core.debug(`User ${user.login} is a member of ${user.organization}`);
                         if (((_d = (_c = orgData.get(user.organization)) === null || _c === void 0 ? void 0 : _c.seats) !== null && _d !== void 0 ? _d : []).find(seat => seat.assignee.login === user.login)) {
                             core.info(`User ${user.login} already has a copilot seat in ${user.organization}`);
-                            return;
+                            continue;
                         }
                         else {
                             if (!input.deployUsersDryRun) {
