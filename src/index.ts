@@ -419,7 +419,7 @@ const run = async (): Promise<void> => {
               if (!input.deployUsersDryRun) {
                 core.info(`Assigning ${user.login} a Copilot seat in ${user.organization}`);
                 try {
-                  await octokit.request(`POST /orgs/{org}/copilot/billing/selected_users`, {
+                  await octokit.request(`POST /orgs/${user.organization}/copilot/billing/selected_users`, {
                     selected_usernames: [`${user.login}`]
                   });
                 } catch (error) {
