@@ -378,47 +378,42 @@ const run = async (): Promise<void> => {
           }
         } else {
           core.debug(`Organization Data found for ${user.organization}`);
-        }
-
-        // Save organization member info with https://docs.github.com/en/rest/orgs/members?apiVersion=2022-11-28#list-organization-members
-        //const members = await getOrgMembers(user.organization, octokit);
-        //core.info(`Found ${members.length} members in ${user.organization}.`);
         
-        // Then Check if the user exists in the organization
-        if (user.login != orgData.get(user.organization)?.members.find(member => member.login === user.login)?.login) {
-          // Note - Could do setFailed here, but it's not really a failure.  Just a warning.
-          core.error(`User ${user.login} is not a member of ${user.organization}`);
-          return;
-
-          /*
-          // User not found in organization.  Add them.
-          // https://docs.github.com/en/rest/orgs/members?apiVersion=2022-11-28#set-organization-membership-for-a-user
-          await octokit.request('PUT /orgs/${org}/memberships/${username}', {
-            role: 'member',
-          });
-          */
-          
-        } else {
-          core.debug(`User ${user.login} is a member of ${user.organization}`);
-
-          // Check if the user is already has a copilot seat
-          if (orgData.get(user.organization)?.seats.find(seat => seat.assignee.login === user.login)) {
-            core.debug(`User ${user.login} already has a copilot seat in ${user.organization}`);
+          // Organization Exists - Check if the user exists in the organization
+          if (user.login != orgData.get(user.organization)?.members.find(member => member.login === user.login)?.login) {
+            // Note - Could do setFailed here, but it's not really a failure.  Just a warning.
+            core.error(`User ${user.login} is not a member of ${user.organization}`);
             return;
+
+            /*
+            // User not found in organization.  Add them.
+            // https://docs.github.com/en/rest/orgs/members?apiVersion=2022-11-28#set-organization-membership-for-a-user
+            await octokit.request('PUT /orgs/${org}/memberships/${username}', {
+              role: 'member',
+            });
+            */
+            
           } else {
-            // Assign a copilot Seat to the user
-            // https://docs.github.com/en/rest/reference/copilot#add-a-user-to-the-organization
-            if (!input.deployUsersDryRun) {
-              core.info(`Assigning ${user.login} a Copilot seat in ${user.organization}`);
-              await octokit.request(`PUT /orgs/${user.organization}/copilot/billing/selected_users`, {
-                selected_usernames: [`${user.login}`]
-              });
+            core.debug(`User ${user.login} is a member of ${user.organization}`);
+
+            // Check if the user is already has a copilot seat
+            if (orgData.get(user.organization)?.seats.find(seat => seat.assignee.login === user.login)) {
+              core.debug(`User ${user.login} already has a copilot seat in ${user.organization}`);
+              return;
             } else {
-              core.info(`DRY RUN: Would assign ${user.login} a Copilot seat in ${user.organization}`);
+              // Assign a copilot Seat to the user
+              // https://docs.github.com/en/rest/reference/copilot#add-a-user-to-the-organization
+              if (!input.deployUsersDryRun) {
+                core.info(`Assigning ${user.login} a Copilot seat in ${user.organization}`);
+                await octokit.request(`PUT /orgs/${user.organization}/copilot/billing/selected_users`, {
+                  selected_usernames: [`${user.login}`]
+                });
+              } else {
+                core.info(`DRY RUN: Would assign ${user.login} a Copilot seat in ${user.organization}`);
+              }
             }
           }
         }
-
       });
 
       // TODO - Capture groups above -- Use for summary reporting... 

@@ -22377,26 +22377,26 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 }
                 else {
                     core.debug(`Organization Data found for ${user.organization}`);
-                }
-                if (user.login != ((_b = (_a = orgData.get(user.organization)) === null || _a === void 0 ? void 0 : _a.members.find(member => member.login === user.login)) === null || _b === void 0 ? void 0 : _b.login)) {
-                    core.error(`User ${user.login} is not a member of ${user.organization}`);
-                    return;
-                }
-                else {
-                    core.debug(`User ${user.login} is a member of ${user.organization}`);
-                    if ((_c = orgData.get(user.organization)) === null || _c === void 0 ? void 0 : _c.seats.find(seat => seat.assignee.login === user.login)) {
-                        core.debug(`User ${user.login} already has a copilot seat in ${user.organization}`);
+                    if (user.login != ((_b = (_a = orgData.get(user.organization)) === null || _a === void 0 ? void 0 : _a.members.find(member => member.login === user.login)) === null || _b === void 0 ? void 0 : _b.login)) {
+                        core.error(`User ${user.login} is not a member of ${user.organization}`);
                         return;
                     }
                     else {
-                        if (!input.deployUsersDryRun) {
-                            core.info(`Assigning ${user.login} a Copilot seat in ${user.organization}`);
-                            yield octokit.request(`PUT /orgs/${user.organization}/copilot/billing/selected_users`, {
-                                selected_usernames: [`${user.login}`]
-                            });
+                        core.debug(`User ${user.login} is a member of ${user.organization}`);
+                        if ((_c = orgData.get(user.organization)) === null || _c === void 0 ? void 0 : _c.seats.find(seat => seat.assignee.login === user.login)) {
+                            core.debug(`User ${user.login} already has a copilot seat in ${user.organization}`);
+                            return;
                         }
                         else {
-                            core.info(`DRY RUN: Would assign ${user.login} a Copilot seat in ${user.organization}`);
+                            if (!input.deployUsersDryRun) {
+                                core.info(`Assigning ${user.login} a Copilot seat in ${user.organization}`);
+                                yield octokit.request(`PUT /orgs/${user.organization}/copilot/billing/selected_users`, {
+                                    selected_usernames: [`${user.login}`]
+                                });
+                            }
+                            else {
+                                core.info(`DRY RUN: Would assign ${user.login} a Copilot seat in ${user.organization}`);
+                            }
                         }
                     }
                 }
