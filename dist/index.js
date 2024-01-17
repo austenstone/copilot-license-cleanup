@@ -22186,7 +22186,7 @@ function getOrgMembers(org, octokit) {
                 }
                 catch (error) {
                     if (error instanceof request_error_1.RequestError && error.name === "HttpError" && error.message === "Not Found") {
-                        core.error(error.message + ` (${org}).  Please check that the organization exists and you are an org owner.`);
+                        core.error(`Organization (${org}) not found.  Please check that the organization exists and you are an org owner.`);
                         break;
                     }
                     else {
@@ -22401,9 +22401,20 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                         else {
                             if (!input.deployUsersDryRun) {
                                 core.info(`Assigning ${user.login} a Copilot seat in ${user.organization}`);
-                                yield octokit.request(`PUT /orgs/${user.organization}/copilot/billing/selected_users`, {
-                                    selected_usernames: [`${user.login}`]
-                                });
+                                try {
+                                    yield octokit.request(`PUT /orgs/${user.organization}/copilot/billing/selected_users`, {
+                                        selected_usernames: [`${user.login}`]
+                                    });
+                                }
+                                catch (error) {
+                                    if (error instanceof request_error_1.RequestError && error.status === 404) {
+                                        core.error(error.message + ` (${user.organization}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
+                                        return;
+                                    }
+                                    else {
+                                        throw error;
+                                    }
+                                }
                             }
                             else {
                                 core.info(`DRY RUN: Would assign ${user.login} a Copilot seat in ${user.organization}`);

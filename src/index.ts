@@ -129,7 +129,7 @@ async function getOrgMembers(org: string, octokit: Octokit) {
         page++;
       } catch (error) {
         if (error instanceof RequestError && error.name === "HttpError" && error.message === "Not Found") {
-          core.error((error as Error).message + ` (${org}).  Please check that the organization exists and you are an org owner.`);
+          core.error(`Organization (${org}) not found.  Please check that the organization exists and you are an org owner.`);
           break;
         } else {
           throw error;
@@ -418,9 +418,18 @@ const run = async (): Promise<void> => {
               // https://docs.github.com/en/rest/reference/copilot#add-a-user-to-the-organization
               if (!input.deployUsersDryRun) {
                 core.info(`Assigning ${user.login} a Copilot seat in ${user.organization}`);
-                await octokit.request(`PUT /orgs/${user.organization}/copilot/billing/selected_users`, {
-                  selected_usernames: [`${user.login}`]
-                });
+                try {
+                  await octokit.request(`PUT /orgs/${user.organization}/copilot/billing/selected_users`, {
+                    selected_usernames: [`${user.login}`]
+                  });
+                } catch (error) {
+                  if (error instanceof RequestError && error.status === 404) {
+                    core.error((error as Error).message + ` (${user.organization}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
+                    return;
+                  } else {
+                    throw error;
+                  }
+                }
               } else {
                 core.info(`DRY RUN: Would assign ${user.login} a Copilot seat in ${user.organization}`);
               }
