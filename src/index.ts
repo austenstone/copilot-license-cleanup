@@ -351,6 +351,7 @@ const run = async (): Promise<void> => {
         // Check if the organization already exists in orgData
         if (!orgData.get(user.organization)) {
           // Organization not found in orgData.  Add it.
+          core.debug(`Organization Data not found for ${user.organization}.  Fetching...`);
           const seats = await getOrgData(user.organization, octokit);
           getInactiveSeats(user.organization, seats, input.inactiveDays);
       
@@ -359,14 +360,18 @@ const run = async (): Promise<void> => {
             core.setFailed(`Organization not found: ${user.organization}`);
             return;
           }
+        } else {
+          core.debug(`Organization Data found for ${user.organization}`);
         }
 
         // Save organization member info with https://docs.github.com/en/rest/orgs/members?apiVersion=2022-11-28#list-organization-members
-        await getOrgMembers(user.organization, octokit);
+        const members = await getOrgMembers(user.organization, octokit);
+        core.info(`Found ${members.length} members in ${user.organization}.`);
         
         // Then Check if the user exists in the organization
         if (user.login != orgData.get(user.organization)?.members.find(member => member.login === user.login)?.login) {
-          core.setFailed(`User ${user.login} is not a member of ${user.organization}`);
+          // Note - Could do setFailed here, but it's not really a failure.  Just a warning.
+          core.error(`User ${user.login} is not a member of ${user.organization}`);
           return;
 
           /*

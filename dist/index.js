@@ -22165,6 +22165,32 @@ function getInactiveSeats(org, seats, inactiveDays) {
     orgData.set(org, Object.assign(Object.assign({}, orgDataEntry), { inactiveSeats: inactiveSeatsWithOrg }));
     return inactiveSeatsWithOrg;
 }
+function getOrgMembers(org, octokit) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const members = yield core.group('Fetching GitHub Organization Members for ' + org, () => __awaiter(this, void 0, void 0, function* () {
+            let members = [];
+            let page = 1;
+            while (true) {
+                try {
+                    const response = yield octokit.request(`GET /orgs/${org}/members?per_page=100&page=${page}`);
+                    if (response.data.length === 0) {
+                        break;
+                    }
+                    members = members.concat(response.data);
+                    page++;
+                }
+                catch (error) {
+                    throw error;
+                }
+            }
+            core.info(`Found ${members.length} members`);
+            core.debug(JSON.stringify(members, null, 2));
+            return members;
+        }));
+        orgData.set(org, { members: members });
+        return members;
+    });
+}
 function getInputs() {
     const result = {};
     result.token = core.getInput('github-token');
@@ -22176,6 +22202,7 @@ function getInputs() {
     result.jobSummary = core.getBooleanInput('job-summary');
     result.csv = core.getBooleanInput('csv');
     result.deployUsers = core.getBooleanInput('deploy-users');
+    result.deployUsersDryRun = core.getBooleanInput('deploy-users-dry-run');
     result.deployUsersCsv = core.getInput('deploy-users-csv');
     result.deployValidationTime = parseInt(core.getInput('deploy-validation-time'));
     return result;
@@ -22320,9 +22347,46 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             });
             core.info(`Found ${usersToDeploy.length} users to deploy.`);
             core.debug(JSON.stringify(usersToDeploy, null, 2));
-            usersToDeploy.forEach(user => {
+            usersToDeploy.forEach((user) => __awaiter(void 0, void 0, void 0, function* () {
+                var _a, _b, _c;
                 core.info(`Deploying user: ${JSON.stringify(user)}`);
-            });
+                if (!orgData.get(user.organization)) {
+                    core.debug(`Organization Data not found for ${user.organization}.  Fetching...`);
+                    const seats = yield getOrgData(user.organization, octokit);
+                    getInactiveSeats(user.organization, seats, input.inactiveDays);
+                    if (!orgData.get(user.organization)) {
+                        core.setFailed(`Organization not found: ${user.organization}`);
+                        return;
+                    }
+                }
+                else {
+                    core.debug(`Organization Data found for ${user.organization}`);
+                }
+                const members = yield getOrgMembers(user.organization, octokit);
+                core.info(`Found ${members.length} members in ${user.organization}.`);
+                if (user.login != ((_b = (_a = orgData.get(user.organization)) === null || _a === void 0 ? void 0 : _a.members.find(member => member.login === user.login)) === null || _b === void 0 ? void 0 : _b.login)) {
+                    core.error(`User ${user.login} is not a member of ${user.organization}`);
+                    return;
+                }
+                else {
+                    core.debug(`User ${user.login} is a member of ${user.organization}`);
+                    if ((_c = orgData.get(user.organization)) === null || _c === void 0 ? void 0 : _c.seats.find(seat => seat.assignee.login === user.login)) {
+                        core.debug(`User ${user.login} already has a copilot seat in ${user.organization}`);
+                        return;
+                    }
+                    else {
+                        if (!input.deployUsersDryRun) {
+                            core.info(`Assigning ${user.login} a Copilot seat in ${user.organization}`);
+                            yield octokit.request(`PUT /orgs/${user.organization}/copilot/billing/selected_users`, {
+                                selected_usernames: [`${user.login}`]
+                            });
+                        }
+                        else {
+                            core.info(`DRY RUN: Would assign ${user.login} a Copilot seat in ${user.organization}`);
+                        }
+                    }
+                }
+            }));
         }
         catch (err) {
             console.error(err);
