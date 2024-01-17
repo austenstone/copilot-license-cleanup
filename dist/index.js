@@ -22402,7 +22402,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                             if (!input.deployUsersDryRun) {
                                 core.info(`Assigning ${user.login} a Copilot seat in ${user.organization}`);
                                 try {
-                                    yield octokit.request(`PUT /orgs/${user.organization}/copilot/billing/selected_users`, {
+                                    yield octokit.request(`POST /orgs/{org}/copilot/billing/selected_users`, {
                                         selected_usernames: [`${user.login}`]
                                     });
                                 }

@@ -415,15 +415,15 @@ const run = async (): Promise<void> => {
               return;
             } else {
               // Assign a copilot Seat to the user
-              // https://docs.github.com/en/rest/reference/copilot#add-a-user-to-the-organization
+              // https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-business?apiVersion=2022-11-28#add-users-to-the-copilot-business-subscription-for-an-organization
               if (!input.deployUsersDryRun) {
                 core.info(`Assigning ${user.login} a Copilot seat in ${user.organization}`);
                 try {
-                  await octokit.request(`PUT /orgs/${user.organization}/copilot/billing/selected_users`, {
+                  await octokit.request(`POST /orgs/{org}/copilot/billing/selected_users`, {
                     selected_usernames: [`${user.login}`]
                   });
                 } catch (error) {
-                  //if (error instanceof RequestError && error.status === 404) {
+                  // if (error instanceof RequestError && error.status === 404) {
                   //  core.error((error as Error).message + ` (${user.organization}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
                   //  return;
                   //} else {
