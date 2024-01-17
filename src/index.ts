@@ -423,12 +423,12 @@ const run = async (): Promise<void> => {
                     selected_usernames: [`${user.login}`]
                   });
                 } catch (error) {
-                  if (error instanceof RequestError && error.status === 404) {
-                    core.error((error as Error).message + ` (${user.organization}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
-                    return;
-                  } else {
+                  //if (error instanceof RequestError && error.status === 404) {
+                  //  core.error((error as Error).message + ` (${user.organization}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
+                  //  return;
+                  //} else {
                     throw error;
-                  }
+                  //}
                 }
               } else {
                 core.info(`DRY RUN: Would assign ${user.login} a Copilot seat in ${user.organization}`);

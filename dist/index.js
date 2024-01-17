@@ -22407,13 +22407,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                                     });
                                 }
                                 catch (error) {
-                                    if (error instanceof request_error_1.RequestError && error.status === 404) {
-                                        core.error(error.message + ` (${user.organization}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
-                                        return;
-                                    }
-                                    else {
-                                        throw error;
-                                    }
+                                    throw error;
                                 }
                             }
                             else {
