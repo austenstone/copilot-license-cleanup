@@ -22357,8 +22357,14 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 core.info(`Processing user for deployment: ${JSON.stringify(user)}`);
                 if (!orgData.get(user.organization)) {
                     core.info(`Organization Data not found for ${user.organization}.  Fetching...`);
-                    const seats = yield getOrgData(user.organization, octokit);
-                    getInactiveSeats(user.organization, seats, input.inactiveDays);
+                    try {
+                        const seats = yield getOrgData(user.organization, octokit);
+                        getInactiveSeats(user.organization, seats, input.inactiveDays);
+                    }
+                    catch (error) {
+                        core.error(`Failed to fetch data for organization ${user.organization}: ${error}`);
+                        return;
+                    }
                     if (!orgData.get(user.organization)) {
                         core.error(`Organization not found: ${user.organization}`);
                         return;

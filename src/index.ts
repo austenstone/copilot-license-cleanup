@@ -359,8 +359,13 @@ const run = async (): Promise<void> => {
         if (!orgData.get(user.organization)) {
           // Organization not found in orgData.  Add it.
           core.info(`Organization Data not found for ${user.organization}.  Fetching...`);
-          const seats = await getOrgData(user.organization, octokit);
-          getInactiveSeats(user.organization, seats, input.inactiveDays);
+          try {
+            const seats = await getOrgData(user.organization, octokit);
+            getInactiveSeats(user.organization, seats, input.inactiveDays);
+          } catch (error) {
+            core.error(`Failed to fetch data for organization ${user.organization}: ${error}`);
+            return;
+          }
       
           // Confirm the org data was added
           if (!orgData.get(user.organization)) {
