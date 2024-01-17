@@ -427,6 +427,7 @@ const run = async (): Promise<void> => {
                   });
 
                   core.info(`Removed ${response.data} seats`);
+                  console.log(JSON.stringify(response.data, null, 2));
                   console.log(typeof response.data);
                   //deployedSeatsCount += response.data.seats_cancelled;
                 } catch (error) {

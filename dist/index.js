@@ -22406,6 +22406,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                                         selected_usernames: [`${user.login}`]
                                     });
                                     core.info(`Removed ${response.data} seats`);
+                                    console.log(JSON.stringify(response.data, null, 2));
                                     console.log(typeof response.data);
                                 }
                                 catch (error) {
