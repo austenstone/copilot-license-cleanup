@@ -22355,7 +22355,6 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 }
                 catch (error) {
                     core.error(`Failed to fetch members for organization ${organization}: ${error}`);
-                    return;
                 }
             }
             usersToDeploy.forEach((user) => __awaiter(void 0, void 0, void 0, function* () {

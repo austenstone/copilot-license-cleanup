@@ -353,7 +353,6 @@ const run = async (): Promise<void> => {
             core.info(`Found ${members.length} members in ${organization}.`);
           } catch (error) {
             core.error(`Failed to fetch members for organization ${organization}: ${error}`);
-            return;
           }
       }
 
