@@ -22358,7 +22358,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 }
             }
             usersToDeploy.forEach((user) => __awaiter(void 0, void 0, void 0, function* () {
-                var _a, _b, _c;
+                var _a, _b, _c, _d;
                 core.info(`Processing user for deployment: ${JSON.stringify(user)}`);
                 if (!orgData.get(user.organization)) {
                     core.info(`Organization Data not found for ${user.organization}.  Fetching...`);
@@ -22383,8 +22383,8 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                     }
                     else {
                         core.debug(`User ${user.login} is a member of ${user.organization}`);
-                        if ((_c = orgData.get(user.organization)) === null || _c === void 0 ? void 0 : _c.seats.find(seat => seat.assignee.login === user.login)) {
-                            core.debug(`User ${user.login} already has a copilot seat in ${user.organization}`);
+                        if (((_d = (_c = orgData.get(user.organization)) === null || _c === void 0 ? void 0 : _c.seats) !== null && _d !== void 0 ? _d : []).find(seat => seat.assignee.login === user.login)) {
+                            core.info(`User ${user.login} already has a copilot seat in ${user.organization}`);
                             return;
                         }
                         else {

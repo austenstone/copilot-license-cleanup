@@ -397,8 +397,9 @@ const run = async (): Promise<void> => {
             core.debug(`User ${user.login} is a member of ${user.organization}`);
 
             // Check if the user is already has a copilot seat
-            if (orgData.get(user.organization)?.seats.find(seat => seat.assignee.login === user.login)) {
-              core.debug(`User ${user.login} already has a copilot seat in ${user.organization}`);
+            //if (orgData.get(user.organization)?.seats.find(seat => seat.assignee.login === user.login)) {
+            if ((orgData.get(user.organization)?.seats ?? []).find(seat => seat.assignee.login === user.login)) {
+              core.info(`User ${user.login} already has a copilot seat in ${user.organization}`);
               return;
             } else {
               // Assign a copilot Seat to the user
