@@ -9,6 +9,7 @@ import type { Endpoints } from "@octokit/types";
 import { SummaryTableRow } from '@actions/core/lib/summary';
 import { RequestError } from '@octokit/request-error';
 
+
 interface Input {
   token: string;
   org: string;
@@ -45,28 +46,33 @@ async function getOrgData(org: string, octokit: Octokit) {
 
     // No type exists for copilot endpoint yet
     let _seats: Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]['data']['seats'] = [], totalSeats = 0, page = 1;
-    do {
-      try {
-        const response = await octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
-          org: org
-        });
-        totalSeats = response.data.total_seats;
-        _seats = _seats.concat(response.data.seats);
-        page++;
-      } catch (error) {
-        if (error instanceof RequestError && error.message === "Copilot Business is not enabled for this organization.") {
-          core.error((error as Error).message + ` (${org})`);
-          break;
-        } else if (error instanceof RequestError && error.status === 404) {
-          core.error((error as Error).message + ` (${org}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
-          break;
-        } else {
-          throw error;
+    try { 
+      do {
+        try {
+          const response = await octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
+            org: org
+          });
+          totalSeats = response.data.total_seats;
+          _seats = _seats.concat(response.data.seats);
+          page++;
+        } catch (error) {
+          if (error instanceof RequestError && error.message === "Copilot Business is not enabled for this organization.") {
+            core.error((error as Error).message + ` (${org})`);
+            break;
+          } else if (error instanceof RequestError && error.status === 404) {
+            core.error((error as Error).message + ` (${org}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
+            break;
+          } else {
+            throw error;
+          }
         }
-      }
-    } while (_seats.length < totalSeats);
-    core.info(`Found ${_seats.length} seats`)
-    core.debug(JSON.stringify(_seats, null, 2));
+      } while (_seats.length < totalSeats);
+      core.info(`Found ${_seats.length} seats`)
+      core.debug(JSON.stringify(_seats, null, 2));
+    } finally {
+      // Close Actions core.group
+      core.endGroup();
+    }
     return _seats;
   });
 
@@ -122,9 +128,15 @@ async function getOrgMembers(org: string, octokit: Octokit) {
         members = members.concat(response.data);
         page++;
       } catch (error) {
-        throw error;
+        if (error instanceof RequestError && error.name === "HttpError" && error.message === "Not Found") {
+          core.error((error as Error).message + ` (${org}).  Please check that the organization exists and you are an org owner.`);
+          break;
+        } else {
+          throw error;
+        }
       }
     }
+
     core.info(`Found ${members.length} members`)
     core.debug(JSON.stringify(members, null, 2));
     return members;
