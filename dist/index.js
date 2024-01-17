@@ -22347,11 +22347,16 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             });
             core.info(`Found ${usersToDeploy.length} users to deploy.`);
             core.debug(JSON.stringify(usersToDeploy, null, 2));
+            const uniqueOrganizations = new Set(usersToDeploy.map(user => user.organization));
+            for (const organization of uniqueOrganizations) {
+                const members = yield getOrgMembers(organization, octokit);
+                core.info(`Found ${members.length} members in ${organization}.`);
+            }
             usersToDeploy.forEach((user) => __awaiter(void 0, void 0, void 0, function* () {
                 var _a, _b, _c;
-                core.info(`Deploying user: ${JSON.stringify(user)}`);
+                core.info(`Processing user for deployment: ${JSON.stringify(user)}`);
                 if (!orgData.get(user.organization)) {
-                    core.debug(`Organization Data not found for ${user.organization}.  Fetching...`);
+                    core.info(`Organization Data not found for ${user.organization}.  Fetching...`);
                     const seats = yield getOrgData(user.organization, octokit);
                     getInactiveSeats(user.organization, seats, input.inactiveDays);
                     if (!orgData.get(user.organization)) {
@@ -22362,8 +22367,6 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 else {
                     core.debug(`Organization Data found for ${user.organization}`);
                 }
-                const members = yield getOrgMembers(user.organization, octokit);
-                core.info(`Found ${members.length} members in ${user.organization}.`);
                 if (user.login != ((_b = (_a = orgData.get(user.organization)) === null || _a === void 0 ? void 0 : _a.members.find(member => member.login === user.login)) === null || _b === void 0 ? void 0 : _b.login)) {
                     core.error(`User ${user.login} is not a member of ${user.organization}`);
                     return;

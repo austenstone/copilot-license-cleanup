@@ -345,13 +345,20 @@ const run = async (): Promise<void> => {
       core.info(`Found ${usersToDeploy.length} users to deploy.`);
       core.debug(JSON.stringify(usersToDeploy, null, 2));
 
+      // Get members from each organization
+      const uniqueOrganizations = new Set(usersToDeploy.map(user => user.organization));
+      for (const organization of uniqueOrganizations) {
+        const members = await getOrgMembers(organization, octokit);
+        core.info(`Found ${members.length} members in ${organization}.`);
+      }
+
       usersToDeploy.forEach(async user => {
-        core.info(`Deploying user: ${JSON.stringify(user)}`);
+        core.info(`Processing user for deployment: ${JSON.stringify(user)}`);
 
         // Check if the organization already exists in orgData
         if (!orgData.get(user.organization)) {
           // Organization not found in orgData.  Add it.
-          core.debug(`Organization Data not found for ${user.organization}.  Fetching...`);
+          core.info(`Organization Data not found for ${user.organization}.  Fetching...`);
           const seats = await getOrgData(user.organization, octokit);
           getInactiveSeats(user.organization, seats, input.inactiveDays);
       
@@ -365,8 +372,8 @@ const run = async (): Promise<void> => {
         }
 
         // Save organization member info with https://docs.github.com/en/rest/orgs/members?apiVersion=2022-11-28#list-organization-members
-        const members = await getOrgMembers(user.organization, octokit);
-        core.info(`Found ${members.length} members in ${user.organization}.`);
+        //const members = await getOrgMembers(user.organization, octokit);
+        //core.info(`Found ${members.length} members in ${user.organization}.`);
         
         // Then Check if the user exists in the organization
         if (user.login != orgData.get(user.organization)?.members.find(member => member.login === user.login)?.login) {
