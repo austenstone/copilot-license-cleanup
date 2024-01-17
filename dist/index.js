@@ -22198,7 +22198,8 @@ function getOrgMembers(org, octokit) {
             core.debug(JSON.stringify(members, null, 2));
             return members;
         }));
-        orgData.set(org, { members: members });
+        const orgDataEntry = orgData.get(org) || {};
+        orgData.set(org, Object.assign(Object.assign({}, orgDataEntry), { members: members }));
         return members;
     });
 }

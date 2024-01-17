@@ -149,8 +149,9 @@ async function getOrgMembers(org: string, octokit: Octokit) {
     return members;
   });
 
-  // Save member data to the orgData Map by org id and then return members
-  orgData.set(org, { members: members });
+  // Save existing orgData and append member data to the orgData Map by org id and then return members
+  const orgDataEntry = orgData.get(org) || {};
+  orgData.set(org, { ...orgDataEntry, members: members });
   return members;
 
 }
