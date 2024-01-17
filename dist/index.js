@@ -22396,6 +22396,8 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                     }
                     else {
                         core.debug(`User ${user.login} is a member of ${user.organization}`);
+                        console.log(`Checking if user ${user.login} has a copilot seat in ${user.organization}`);
+                        console.log(`orgData for ${user.organization}:`, JSON.stringify(orgData.get(user.organization), null, 2));
                         if (((_d = (_c = orgData.get(user.organization)) === null || _c === void 0 ? void 0 : _c.seats) !== null && _d !== void 0 ? _d : []).find(seat => seat.assignee.login === user.login)) {
                             core.info(`User ${user.login} already has a copilot seat in ${user.organization}`);
                             continue;
