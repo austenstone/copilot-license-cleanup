@@ -348,8 +348,13 @@ const run = async (): Promise<void> => {
       // Get members from each organization
       const uniqueOrganizations = new Set(usersToDeploy.map(user => user.organization));
       for (const organization of uniqueOrganizations) {
-        const members = await getOrgMembers(organization, octokit);
-        core.info(`Found ${members.length} members in ${organization}.`);
+        try {
+            const members = await getOrgMembers(organization, octokit);
+            core.info(`Found ${members.length} members in ${organization}.`);
+          } catch (error) {
+            core.error(`Failed to fetch members for organization ${organization}: ${error}`);
+            return;
+          }
       }
 
       usersToDeploy.forEach(async user => {

@@ -22349,8 +22349,14 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             core.debug(JSON.stringify(usersToDeploy, null, 2));
             const uniqueOrganizations = new Set(usersToDeploy.map(user => user.organization));
             for (const organization of uniqueOrganizations) {
-                const members = yield getOrgMembers(organization, octokit);
-                core.info(`Found ${members.length} members in ${organization}.`);
+                try {
+                    const members = yield getOrgMembers(organization, octokit);
+                    core.info(`Found ${members.length} members in ${organization}.`);
+                }
+                catch (error) {
+                    core.error(`Failed to fetch members for organization ${organization}: ${error}`);
+                    return;
+                }
             }
             usersToDeploy.forEach((user) => __awaiter(void 0, void 0, void 0, function* () {
                 var _a, _b, _c;
