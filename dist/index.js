@@ -22220,6 +22220,7 @@ function getInputs() {
 }
 exports.getInputs = getInputs;
 const run = () => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c, _d;
     const input = getInputs();
     let organizations = [];
     let hasNextPage = false;
@@ -22368,8 +22369,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                     core.error(`Failed to fetch members for organization ${organization}: ${error}`);
                 }
             }
-            usersToDeploy.forEach((user) => __awaiter(void 0, void 0, void 0, function* () {
-                var _a, _b, _c, _d;
+            for (const user of usersToDeploy) {
                 core.info(`Processing user for deployment: ${JSON.stringify(user)}`);
                 if (!orgData.get(user.organization)) {
                     core.info(`Organization Data not found for ${user.organization}.  Fetching...`);
@@ -22421,7 +22421,8 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                         }
                     }
                 }
-            }));
+            }
+            ;
         }
         catch (err) {
             console.error(err);

@@ -368,7 +368,9 @@ const run = async (): Promise<void> => {
           }
       }
 
-      usersToDeploy.forEach(async user => {
+      // Process users one at a time
+      //usersToDeploy.forEach(async user => {
+      for (const user of usersToDeploy) {
         core.info(`Processing user for deployment: ${JSON.stringify(user)}`);
 
         // Check if the organization already exists in orgData
@@ -435,7 +437,8 @@ const run = async (): Promise<void> => {
             }
           }
         }
-      });
+      };
+      //});
 
       // TODO - Capture groups above -- Use for summary reporting... 
       // TODO - Add some API limits calculations (just to ensure we don't hit the limit unexpectedly)
