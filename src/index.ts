@@ -173,6 +173,7 @@ const run = async (): Promise<void> => {
   let allInactiveSeats: SeatWithOrg[] = [];
   let allRemovedSeatsCount = 0;
   let allSeatsCount = 0;
+  // let deployedSeatsCount = 0;
 
   const octokit = github.getOctokit(input.token);
 
@@ -421,9 +422,13 @@ const run = async (): Promise<void> => {
               if (!input.deployUsersDryRun) {
                 core.info(`Assigning ${user.login} a Copilot seat in ${user.organization}`);
                 try {
-                  await octokit.request(`POST /orgs/${user.organization}/copilot/billing/selected_users`, {
+                  const response = await octokit.request(`POST /orgs/${user.organization}/copilot/billing/selected_users`, {
                     selected_usernames: [`${user.login}`]
                   });
+
+                  core.info(`Removed ${response.data} seats`);
+                  console.log(typeof response.data);
+                  //deployedSeatsCount += response.data.seats_cancelled;
                 } catch (error) {
                   if (error instanceof RequestError && error.message === "Copilot Business is not enabled for this organization.") {
                     core.error((error as Error).message + ` (${user.organization})`);

@@ -22402,9 +22402,11 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                             if (!input.deployUsersDryRun) {
                                 core.info(`Assigning ${user.login} a Copilot seat in ${user.organization}`);
                                 try {
-                                    yield octokit.request(`POST /orgs/${user.organization}/copilot/billing/selected_users`, {
+                                    const response = yield octokit.request(`POST /orgs/${user.organization}/copilot/billing/selected_users`, {
                                         selected_usernames: [`${user.login}`]
                                     });
+                                    core.info(`Removed ${response.data} seats`);
+                                    console.log(typeof response.data);
                                 }
                                 catch (error) {
                                     if (error instanceof request_error_1.RequestError && error.message === "Copilot Business is not enabled for this organization.") {
