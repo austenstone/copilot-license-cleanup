@@ -22407,7 +22407,12 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                                     });
                                 }
                                 catch (error) {
-                                    throw error;
+                                    if (error instanceof request_error_1.RequestError && error.message === "Copilot Business is not enabled for this organization.") {
+                                        core.error(error.message + ` (${user.organization})`);
+                                    }
+                                    else {
+                                        throw error;
+                                    }
                                 }
                             }
                             else {
