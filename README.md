@@ -7,6 +7,8 @@ In addition to this it can also deploy users from a CSV file.  This is useful as
 ## Usage
 Create a workflow (eg: `.github/workflows/copilot-license-cleanup.yml`). See [Creating a Workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
 
+### Deploying users from a CSV file
+
 If you want to deploy users from a CSV file you will need to create a CSV file with the following columns:
 - `organization` - The organization to add the user to
 - `deployment_group` - An arbitrary group name used to track the deployments
@@ -20,6 +22,8 @@ organization,deployment_group,login,activation_date
 exampleorg1,group1,octocat,2024-01-15
 exampleorg1,group1,octodog,2024-01-15
 ```
+
+This requires the users to already exist as members of the enterprise and target organization.
 
 ### PAT(Personal Access Token)
 
@@ -103,11 +107,16 @@ jobs:
 #### Example deploying users from a CSV file 
 
 ```yml
+      # Checkout your repo so we can access the CSV file
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - uses: austenstone/copilot-license-cleanup@v1.1
         with:
           github-token: ${{ secrets.TOKEN }}
           deploy-users: true
           # Optional inputs
+          deploy-users-dry-run: false    # Default is true
           deploy-users-csv: ./copilot-users.csv
           deploy-validation-time: 3
 ```
@@ -134,6 +143,7 @@ Various inputs are defined in [`action.yml`](action.yml):
 | job-summary | Whether to output a summary of the job | true |
 | csv | Whether to output a CSV of inactive users | false |
 | deploy-users | Whether to deploy users from a CSV file | false |
+| deploy-users-dry-run | Whether to perform a dry run when deploying users | true |
 | deploy-users-csv | CSV file location if deploying users | ./copilot-users.csv |
 | deploy-validation-time | The number of days to attempt to deploy the user beyond activation date | 3 |
 

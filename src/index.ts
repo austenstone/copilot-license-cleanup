@@ -19,6 +19,7 @@ interface Input {
   jobSummary: boolean;
   csv: boolean;
   deployUsers: boolean;
+  deployUsersDryRun: boolean;
   deployUsersCsv: string;
   deployValidationTime: number;
 }
@@ -106,6 +107,35 @@ function getInactiveSeats(org: string, seats, inactiveDays: number) {
 
 }
 
+// Function to get all members in an organization
+// Returns an array of seats 
+async function getOrgMembers(org: string, octokit: Octokit) {
+  const members = await core.group('Fetching GitHub Organization Members for ' + org, async () => {
+    let members = [];
+    let page = 1;
+    while (true) {
+      try {
+        const response = await octokit.request(`GET /orgs/${org}/members?per_page=100&page=${page}`);
+        if (response.data.length === 0) {
+          break;
+        }
+        members = members.concat(response.data);
+        page++;
+      } catch (error) {
+        throw error;
+      }
+    }
+    core.info(`Found ${members.length} members`)
+    core.debug(JSON.stringify(members, null, 2));
+    return members;
+  });
+
+  // Save member data to the orgData Map by org id and then return members
+  orgData.set(org, { members: members });
+  return members;
+
+}
+
 export function getInputs(): Input {
   const result = {} as Input;
   result.token = core.getInput('github-token');
@@ -117,6 +147,7 @@ export function getInputs(): Input {
   result.jobSummary = core.getBooleanInput('job-summary');
   result.csv = core.getBooleanInput('csv');
   result.deployUsers = core.getBooleanInput('deploy-users');
+  result.deployUsersDryRun = core.getBooleanInput('deploy-users-dry-run');
   result.deployUsersCsv = core.getInput('deploy-users-csv');
   result.deployValidationTime = parseInt(core.getInput('deploy-validation-time'));
   return result;
@@ -314,32 +345,81 @@ const run = async (): Promise<void> => {
       core.info(`Found ${usersToDeploy.length} users to deploy.`);
       core.debug(JSON.stringify(usersToDeploy, null, 2));
 
-      usersToDeploy.forEach(user => {
+      usersToDeploy.forEach(async user => {
         core.info(`Deploying user: ${JSON.stringify(user)}`);
 
-        // TODO - Check if user exists as organization member
-        // TODO - Check if user exists in the enterprise
-        // TODO - Check if user is already deployed.  If so, skip.
+        // Check if the organization already exists in orgData
+        if (!orgData.get(user.organization)) {
+          // Organization not found in orgData.  Add it.
+          const seats = await getOrgData(user.organization, octokit);
+          getInactiveSeats(user.organization, seats, input.inactiveDays);
+      
+          // Confirm the org data was added
+          if (!orgData.get(user.organization)) {
+            core.setFailed(`Organization not found: ${user.organization}`);
+            return;
+          }
+        }
+
+        // Save organization member info with https://docs.github.com/en/rest/orgs/members?apiVersion=2022-11-28#list-organization-members
+        await getOrgMembers(user.organization, octokit);
+        
+        // Then Check if the user exists in the organization
+        if (user.login != orgData.get(user.organization)?.members.find(member => member.login === user.login)?.login) {
+          core.setFailed(`User ${user.login} is not a member of ${user.organization}`);
+          return;
+
+          /*
+          // User not found in organization.  Add them.
+          // https://docs.github.com/en/rest/orgs/members?apiVersion=2022-11-28#set-organization-membership-for-a-user
+          await octokit.request('PUT /orgs/${org}/memberships/${username}', {
+            role: 'member',
+          });
+          */
+          
+        } else {
+          core.debug(`User ${user.login} is a member of ${user.organization}`);
+
+          // Check if the user is already has a copilot seat
+          if (orgData.get(user.organization)?.seats.find(seat => seat.assignee.login === user.login)) {
+            core.debug(`User ${user.login} already has a copilot seat in ${user.organization}`);
+            return;
+          } else {
+            // Assign a copilot Seat to the user
+            // https://docs.github.com/en/rest/reference/copilot#add-a-user-to-the-organization
+            if (!input.deployUsersDryRun) {
+              core.info(`Assigning ${user.login} a Copilot seat in ${user.organization}`);
+              await octokit.request(`PUT /orgs/${user.organization}/copilot/billing/selected_users`, {
+                selected_usernames: [`${user.login}`]
+              });
+            } else {
+              core.info(`DRY RUN: Would assign ${user.login} a Copilot seat in ${user.organization}`);
+            }
+          }
+        }
+
       });
 
-      // TODO - Capture groups above 
+      // TODO - Capture groups above -- Use for summary reporting... 
       // TODO - Add some API limits calculations (just to ensure we don't hit the limit unexpectedly)
         // i.e. you could have 10,000 users in an org.  Don't check them one by one.  (10,000 users = 100 API calls with pagination)
         // Split out get users by org into a separate function and data structure when checking for use in deployment
         // I also need this data to show active users in the summary output for deployments
         // I should also capture inactive users per deployment group as an output... So I can take action on them later.
-      // TODO - Check if user exists as organization member
-      // TODO - Check if user exists in the enterprise
-      // TODO - Allow add to team?  
-      // TODO - Check if user is already deployed.  If so, skip.
-      // TODO - Add ability to enable copilot for user
-      // TODO - Add example save deployed users to JSON as a file
+
+      // TODO - Do we want to allow add to organization or team?  
+      // TODO - Should I add multiple users to Copilot at once (with selected_users) to minimize API calls?  (If so, what is most to add in one call?)
+ 
+      // TODO - Add example to README to save deployed users to JSON as a file
+      // TODO - Write outputs... 
       // TODO - Add Summary Output - Number of users deployed per group, active or not?  
       // TODO - Add CSV Output
       // TODO - Make the CSV policy - Add ability for it to be source of truth and remove users not in CSV
       // TODO - Review Readme Org admin requirement - Potential solution: https://github.com/some-natalie/gh-org-admin-promote
-
-      
+      // TODO - Update README to call out that EMU and scim sync would basically override this... (ie we can remove here but scim would reprovision)
+        // As such... This is a better notification system for that use case.. 
+          // TODO - Notification example in readme?  Like sending a slack or teams message? Or email?  Or all of the above? 
+      // TODO - 3 more Javascript Dependabot updates... 
 
     } catch (err) {
       console.error(err);

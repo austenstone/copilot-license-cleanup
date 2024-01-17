@@ -42,6 +42,10 @@ inputs:
     description: Whether to deploy users from a CSV file
     default: false
     required: false
+  deploy-users-dry-run:
+    description: Whether to do a dry run of deploying users but not actually deploy
+    default: true
+    required: false
   deploy-users-csv:
     description: CSV file location if deploying users
     default: ./copilot-users.csv
