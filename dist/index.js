@@ -22461,7 +22461,6 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                         ])
                     ]);
                 }
-                core.summary.write();
                 const groupCounts = records.reduce((counts, record) => {
                     var _a, _b;
                     if (!counts[record.deployment_group]) {

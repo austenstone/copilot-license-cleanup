@@ -479,7 +479,7 @@ const run = async (): Promise<void> => {
               ] as SummaryTableRow)
             ])
           }
-          core.summary.write();
+          //core.summary.write();
 
 
           // Add a summary of deployed users by group including number of users with a seat out of total users in the group
