@@ -442,6 +442,8 @@ const run = async (): Promise<void> => {
                 }
               } else {
                 core.info(`DRY RUN: Would assign ${user.login} a Copilot seat in ${user.organization}`);
+                deployedSeatsCount += 1;
+                deployedSeats.push(user);
               }
             }
           }
@@ -449,10 +451,14 @@ const run = async (): Promise<void> => {
       };
       //});
 
-      // Add Summary Output
+      // Add Deployment Summary Output
       if (input.jobSummary) {
         await core.summary
-          .addHeading(`Deployed Seats: ${deployedSeats.length.toString()}`)
+          if (!input.deployUsersDryRun) {
+            core.summary.addHeading(`Deployed Seats: ${deployedSeats.length.toString()}`)
+          } else {
+            core.summary.addHeading(`DRY RUN: Seats to deploy: ${deployedSeats.length.toString()}`)
+          }
           if (deployedSeats.length > 0) {
             core.summary.addTable([
               [
@@ -474,6 +480,72 @@ const run = async (): Promise<void> => {
             ])
           }
           core.summary.write();
+
+
+          // Add a summary of deployed users by group including number of users with a seat out of total users in the group
+          interface Counts {
+            total: number;
+            deployed: number;
+            inactive: number;
+          }
+          
+          interface GroupCounts {
+            [group: string]: Counts;
+          }
+          
+          const groupCounts = records.reduce((counts: GroupCounts, record) => {
+            if (!counts[record.deployment_group]) {
+              counts[record.deployment_group] = { total: 0, deployed: 0, inactive: 0 };
+            }
+            counts[record.deployment_group].total++;
+            // Add deployed count if the user previously had a seat
+            if ((orgData.get(record.organization)?.seats ?? []).find(seat => seat.assignee.login === record.login && seat.pending_cancellation_date === null)) {
+              counts[record.deployment_group].deployed++;
+            }
+            // Add net new deployed users from deployedSeats
+            if (deployedSeats.find(seat => seat.login === record.login)) {
+              counts[record.deployment_group].deployed++;
+            }
+            // Add inactive count if the user is inactive
+            if (allInactiveSeats.find(seat => seat.assignee.login === record.login && seat.organization === record.organization)) {
+              counts[record.deployment_group].inactive++;
+            }
+            return counts;
+          }, {});
+
+          const groupCountsArray = Object.entries(groupCounts)
+            .sort((a, b) => a[0].localeCompare(b[0])) // Sort by group name
+            .map(([group, counts]) => ({
+              group,
+              total: counts.total,
+              deployed: counts.deployed,
+              inactive: counts.inactive
+          }));
+
+          core.debug(`Group Counts: ${JSON.stringify(groupCounts, null, 2)}`);
+
+          if (!input.deployUsersDryRun) {
+            core.summary.addHeading(`Deployment Status`)
+          } else {
+            core.summary.addHeading(`DRY RUN: Deployment Status`)
+          }
+
+          core.summary.addTable([
+            [
+              { data: 'Group', header: true },
+              { data: 'Deployed Seats', header: true },
+              { data: 'Total Seats', header: true },
+              { data: 'Inactive Seats', header: true }
+            ],
+            ...groupCountsArray.map(grouprecord => [
+              grouprecord.group,
+              grouprecord.deployed.toString(),
+              grouprecord.total.toString(),
+              grouprecord.inactive.toString()
+            ] as SummaryTableRow)
+          ])
+
+        core.summary.write();
       }
 
       // TODO - Add summary output

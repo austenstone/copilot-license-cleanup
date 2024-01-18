@@ -22425,6 +22425,8 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                             }
                             else {
                                 core.info(`DRY RUN: Would assign ${user.login} a Copilot seat in ${user.organization}`);
+                                deployedSeatsCount += 1;
+                                deployedSeats.push(user);
                             }
                         }
                     }
@@ -22432,8 +22434,13 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             }
             ;
             if (input.jobSummary) {
-                yield core.summary
-                    .addHeading(`Deployed Seats: ${deployedSeats.length.toString()}`);
+                yield core.summary;
+                if (!input.deployUsersDryRun) {
+                    core.summary.addHeading(`Deployed Seats: ${deployedSeats.length.toString()}`);
+                }
+                else {
+                    core.summary.addHeading(`DRY RUN: Seats to deploy: ${deployedSeats.length.toString()}`);
+                }
                 if (deployedSeats.length > 0) {
                     core.summary.addTable([
                         [
@@ -22454,6 +22461,53 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                         ])
                     ]);
                 }
+                core.summary.write();
+                const groupCounts = records.reduce((counts, record) => {
+                    var _a, _b;
+                    if (!counts[record.deployment_group]) {
+                        counts[record.deployment_group] = { total: 0, deployed: 0, inactive: 0 };
+                    }
+                    counts[record.deployment_group].total++;
+                    if (((_b = (_a = orgData.get(record.organization)) === null || _a === void 0 ? void 0 : _a.seats) !== null && _b !== void 0 ? _b : []).find(seat => seat.assignee.login === record.login && seat.pending_cancellation_date === null)) {
+                        counts[record.deployment_group].deployed++;
+                    }
+                    if (deployedSeats.find(seat => seat.login === record.login)) {
+                        counts[record.deployment_group].deployed++;
+                    }
+                    if (allInactiveSeats.find(seat => seat.assignee.login === record.login && seat.organization === record.organization)) {
+                        counts[record.deployment_group].inactive++;
+                    }
+                    return counts;
+                }, {});
+                const groupCountsArray = Object.entries(groupCounts)
+                    .sort((a, b) => a[0].localeCompare(b[0]))
+                    .map(([group, counts]) => ({
+                    group,
+                    total: counts.total,
+                    deployed: counts.deployed,
+                    inactive: counts.inactive
+                }));
+                core.debug(`Group Counts: ${JSON.stringify(groupCounts, null, 2)}`);
+                if (!input.deployUsersDryRun) {
+                    core.summary.addHeading(`Deployment Status`);
+                }
+                else {
+                    core.summary.addHeading(`DRY RUN: Deployment Status`);
+                }
+                core.summary.addTable([
+                    [
+                        { data: 'Group', header: true },
+                        { data: 'Deployed Seats', header: true },
+                        { data: 'Total Seats', header: true },
+                        { data: 'Inactive Seats', header: true }
+                    ],
+                    ...groupCountsArray.map(grouprecord => [
+                        grouprecord.group,
+                        grouprecord.deployed.toString(),
+                        grouprecord.total.toString(),
+                        grouprecord.inactive.toString()
+                    ])
+                ]);
                 core.summary.write();
             }
         }
