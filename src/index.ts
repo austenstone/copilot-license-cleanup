@@ -479,8 +479,6 @@ const run = async (): Promise<void> => {
               ] as SummaryTableRow)
             ])
           }
-          //core.summary.write();
-
 
           // Add a summary of deployed users by group including number of users with a seat out of total users in the group
           interface Counts {
@@ -547,15 +545,6 @@ const run = async (): Promise<void> => {
 
         core.summary.write();
       }
-
-      // TODO - Add summary output
-      // TODO - Capture groups above -- Use for summary reporting... 
-      // TODO - Add Summary Output - Number of users deployed per group, active or not?  
-      // TODO - Add CSV Output
-      // TODO - Update README to call out that EMU and scim sync would basically override this... (ie we can remove here but scim would reprovision)
-        // As such... This is a better notification system for that use case.. 
-          // TODO - Notification example in readme?  Like sending a slack or teams message? Or email?  Or all of the above? 
-      // TODO - 3 more Javascript Dependabot updates... 
 
     } catch (err) {
       console.error(err);
