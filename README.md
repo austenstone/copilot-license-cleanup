@@ -1,4 +1,4 @@
-# Copilot License Cleanup
+# Copilot License Management
 
 Run this action on a schedule to automatically remove inactive Copilot licenses. It also creates a report as a job summary and csv.
 
