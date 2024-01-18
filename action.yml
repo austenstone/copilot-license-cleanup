@@ -1,6 +1,6 @@
-name: Copilot License Cleanup
+name: Copilot License Management 
 author: Austen Stone
-description: Get a report of inactive Copilot users and optionally remove them
+description: Automations to manage copilot licenses. Cleanup inactive, rollouts, reporting.
 branding:
   icon: "clock"
   color: "blue"
