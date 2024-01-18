@@ -412,11 +412,11 @@ const run = async (): Promise<void> => {
           } else {
             core.debug(`User ${user.login} is a member of ${user.organization}`);
 
-            // Check if the user is already has a copilot seat
+            // Check if the user is already has a copilot seat and is not pending cancellation
             //if (orgData.get(user.organization)?.seats.find(seat => seat.assignee.login === user.login)) {
             core.debug(`Checking if user ${user.login} has a copilot seat in ${user.organization}`);
             core.debug(`orgData for ${user.organization}: ${JSON.stringify(orgData.get(user.organization), null, 2)}`);
-            if ((orgData.get(user.organization)?.seats ?? []).find(seat => seat.assignee.login === user.login)) {
+            if ((orgData.get(user.organization)?.seats ?? []).find(seat => seat.assignee.login === user.login && seat.pending_cancellation_date === null)) {
               core.info(`User ${user.login} already has a copilot seat in ${user.organization}`);
               continue;
             } else {
