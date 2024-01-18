@@ -44,7 +44,7 @@ type UserList = {
 type Octokit = ReturnType<typeof github.getOctokit>;
 
 // Create a Map to store data per organization
-let orgData = new Map();  // Map<org, { seats: [], inactiveSeats: [] }>
+const orgData = new Map();  // Map<org, { seats: [], inactiveSeats: [] }>
 
 // Function to get all seats in an organization
 // Returns an array of seats 
@@ -126,6 +126,7 @@ async function getOrgMembers(org: string, octokit: Octokit) {
   const members = await core.group('Fetching GitHub Organization Members for ' + org, async () => {
     let members = [];
     let page = 1;
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       try {
         const response = await octokit.request(`GET /orgs/${org}/members?per_page=100&page=${page}`);
@@ -181,7 +182,7 @@ const run = async (): Promise<void> => {
   let allInactiveSeats: SeatWithOrg[] = [];
   let allRemovedSeatsCount = 0;
   let allSeatsCount = 0;
-  let deployedSeats: UserList[] = [];
+  const deployedSeats: UserList[] = [];
   let deployedSeatsCount = 0;
 
   const octokit = github.getOctokit(input.token);
@@ -343,7 +344,7 @@ const run = async (): Promise<void> => {
           const currentTime = today.getTime();
           const validationTime = today.setDate(today.getDate() - input.deployValidationTime);
           const activationTime = date.getTime();  // date = record.activation_date
-          const isDateWithinWindow = validationTime <= activationTime  && activationTime <= currentTime;;
+          const isDateWithinWindow = validationTime <= activationTime  && activationTime <= currentTime;
 
           if (!isDateWithinWindow) {
             core.info(`Skipping record due to activation date outside ${input.deployValidationTime} day window: ${JSON.stringify(record)}`);
@@ -371,7 +372,6 @@ const run = async (): Promise<void> => {
       }
 
       // Process users one at a time
-      //usersToDeploy.forEach(async user => {
       for (const user of usersToDeploy) {
         core.info(`Processing user for deployment: ${JSON.stringify(user)}`);
 
@@ -448,8 +448,7 @@ const run = async (): Promise<void> => {
             }
           }
         }
-      };
-      //});
+      }
 
       // Add Deployment Summary Output
       if (input.jobSummary) {

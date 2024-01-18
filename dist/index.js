@@ -22111,7 +22111,7 @@ const path_1 = __importDefault(__nccwpck_require__(1017));
 const sync_1 = __nccwpck_require__(4393);
 const artifact = __importStar(__nccwpck_require__(2605));
 const request_error_1 = __nccwpck_require__(537);
-let orgData = new Map();
+const orgData = new Map();
 function getOrgData(org, octokit) {
     return __awaiter(this, void 0, void 0, function* () {
         const seats = yield core.group('Fetching GitHub Copilot seats for ' + org, () => __awaiter(this, void 0, void 0, function* () {
@@ -22232,7 +22232,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     let allInactiveSeats = [];
     let allRemovedSeatsCount = 0;
     let allSeatsCount = 0;
-    let deployedSeats = [];
+    const deployedSeats = [];
     let deployedSeatsCount = 0;
     const octokit = github.getOctokit(input.token);
     if (input.enterprise && input.enterprise !== null) {
@@ -22355,7 +22355,6 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                     const validationTime = today.setDate(today.getDate() - input.deployValidationTime);
                     const activationTime = date.getTime();
                     const isDateWithinWindow = validationTime <= activationTime && activationTime <= currentTime;
-                    ;
                     if (!isDateWithinWindow) {
                         core.info(`Skipping record due to activation date outside ${input.deployValidationTime} day window: ${JSON.stringify(record)}`);
                         return false;
@@ -22435,7 +22434,6 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                     }
                 }
             }
-            ;
             if (input.jobSummary) {
                 yield core.summary;
                 if (!input.deployUsersDryRun) {
