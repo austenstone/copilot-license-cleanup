@@ -5,7 +5,7 @@ Run this action on a schedule to automatically remove inactive Copilot licenses.
 In addition to this it can also deploy users from a CSV file.  This is useful as you are adopting Copilot as it can help facilitate the process of adding users to your organization.
 
 ## Usage
-Create a workflow (eg: `.github/workflows/copilot-license-cleanup.yml`). See [Creating a Workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
+Create a workflow (eg: `.github/workflows/copilot-license-management.yml`). See [Creating a Workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
 
 ### Deploying users from a CSV file
 

@@ -1,4 +1,4 @@
-name: Cleanup Copilot Licenses
+name: Notify Inactive Copilot Licenses
 on:
   workflow_dispatch:
   schedule:
