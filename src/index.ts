@@ -414,8 +414,8 @@ const run = async (): Promise<void> => {
 
             // Check if the user is already has a copilot seat
             //if (orgData.get(user.organization)?.seats.find(seat => seat.assignee.login === user.login)) {
-            console.log(`Checking if user ${user.login} has a copilot seat in ${user.organization}`);
-            console.log(`orgData for ${user.organization}:`, JSON.stringify(orgData.get(user.organization), null, 2));
+            core.debug(`Checking if user ${user.login} has a copilot seat in ${user.organization}`);
+            core.debug(`orgData for ${user.organization}: ${JSON.stringify(orgData.get(user.organization), null, 2)}`);
             if ((orgData.get(user.organization)?.seats ?? []).find(seat => seat.assignee.login === user.login)) {
               core.info(`User ${user.login} already has a copilot seat in ${user.organization}`);
               continue;
