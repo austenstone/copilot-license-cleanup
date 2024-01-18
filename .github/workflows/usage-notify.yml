@@ -11,7 +11,7 @@ jobs:
     outputs:
       inactive-seats: ${{ steps.copilot.outputs.inactive-seats }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./
         with:
           github-token: ${{ secrets.TOKEN }}
