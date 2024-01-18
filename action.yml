@@ -38,6 +38,22 @@ inputs:
     description: Whether to output a CSV of the inactive users
     default: false
     required: false
+  deploy-users:
+    description: Whether to deploy users from a CSV file
+    default: false
+    required: false
+  deploy-users-dry-run:
+    description: Whether to do a dry run of deploying users but not actually deploy
+    default: true
+    required: false
+  deploy-users-csv:
+    description: CSV file location if deploying users
+    default: ./copilot-users.csv
+    required: false
+  deploy-validation-time:
+    description: The number of days to attempt to deploy the user beyond activation date
+    default: 3
+    required: false
 
 outputs:
   inactive-seats:
@@ -48,6 +64,10 @@ outputs:
     description: The number of seats removed
   seat-count:
     description: The total number of seats
+  deployed-seats:
+    description: JSON array of deployed seats
+  deployed-seat-count:
+    description: The number of deployed seats
 
 runs:
   using: "node16"
