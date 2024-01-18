@@ -449,22 +449,37 @@ const run = async (): Promise<void> => {
       };
       //});
 
-      // TODO - Capture groups above -- Use for summary reporting... 
-      // TODO - Add some API limits calculations (just to ensure we don't hit the limit unexpectedly)
-        // i.e. you could have 10,000 users in an org.  Don't check them one by one.  (10,000 users = 100 API calls with pagination)
-        // Split out get users by org into a separate function and data structure when checking for use in deployment
-        // I also need this data to show active users in the summary output for deployments
-        // I should also capture inactive users per deployment group as an output... So I can take action on them later.
+      // Add Summary Output
+      if (input.jobSummary) {
+        await core.summary
+          .addHeading(`Deployed Seats: ${deployedSeats.length.toString()}`)
+          if (deployedSeats.length > 0) {
+            core.summary.addTable([
+              [
+                { data: 'Organization', header: true },
+                { data: 'Group', header: true },
+                { data: 'Login', header: true },
+                { data: 'Activation Date', header: true }
+              ],
+              ...deployedSeats.sort((a, b) => {
+                const loginA = (a.login || 'Unknown') as string;
+                const loginB = (b.login || 'Unknown') as string;
+                return loginA.localeCompare(loginB);
+              }).map(seat => [
+                seat.organization,
+                seat.deployment_group,
+                seat.login,
+                seat.activation_date
+              ] as SummaryTableRow)
+            ])
+          }
+          core.summary.write();
+      }
 
-      // TODO - Do we want to allow add to organization or team?  
-      // TODO - Should I add multiple users to Copilot at once (with selected_users) to minimize API calls?  (If so, what is most to add in one call?)
- 
-      // TODO - Add example to README to save deployed users to JSON as a file
-      // TODO - Write outputs... 
+      // TODO - Add summary output
+      // TODO - Capture groups above -- Use for summary reporting... 
       // TODO - Add Summary Output - Number of users deployed per group, active or not?  
       // TODO - Add CSV Output
-      // TODO - Make the CSV policy - Add ability for it to be source of truth and remove users not in CSV
-      // TODO - Review Readme Org admin requirement - Potential solution: https://github.com/some-natalie/gh-org-admin-promote
       // TODO - Update README to call out that EMU and scim sync would basically override this... (ie we can remove here but scim would reprovision)
         // As such... This is a better notification system for that use case.. 
           // TODO - Notification example in readme?  Like sending a slack or teams message? Or email?  Or all of the above? 
@@ -473,7 +488,6 @@ const run = async (): Promise<void> => {
     } catch (err) {
       console.error(err);
     }
-
 
   }
 

@@ -25,6 +25,8 @@ exampleorg1,group1,octodog,2024-01-15
 
 This requires the users to already exist as members of the enterprise and target organization.
 
+If you are using Enterprise Managed Users, it may be easier to use a group from your identity provider to manage the users.  You can assign the group to a team in an organization and assign that team to Copilot.  This will allow you to manage the users in your identity provider and have them automatically added/removed from Copilot as group membership changes.
+
 ### PAT(Personal Access Token)
 
 You will need to [create a PAT(Personal Access Token)](https://github.com/settings/tokens/new?scopes=manage_billing:copilot) that has `manage_billing:copilot` access.  If you are specifying an 'enterprise' rather than individual organizations you must also include the `read:org` and `read:enterprise` scopes. 
@@ -88,7 +90,7 @@ jobs:
           enterprise: octodemo
 ```
 
-#### Example uploading inactive users JSON artifact
+#### Example uploading inactive users JSON artifact (same could be done with deployed-seats)
 ```yml
       - uses: austenstone/copilot-license-cleanup@v1.2
         id: copilot

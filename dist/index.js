@@ -22431,6 +22431,31 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 }
             }
             ;
+            if (input.jobSummary) {
+                yield core.summary
+                    .addHeading(`Deployed Seats: ${deployedSeats.length.toString()}`);
+                if (deployedSeats.length > 0) {
+                    core.summary.addTable([
+                        [
+                            { data: 'Organization', header: true },
+                            { data: 'Group', header: true },
+                            { data: 'Login', header: true },
+                            { data: 'Activation Date', header: true }
+                        ],
+                        ...deployedSeats.sort((a, b) => {
+                            const loginA = (a.login || 'Unknown');
+                            const loginB = (b.login || 'Unknown');
+                            return loginA.localeCompare(loginB);
+                        }).map(seat => [
+                            seat.organization,
+                            seat.deployment_group,
+                            seat.login,
+                            seat.activation_date
+                        ])
+                    ]);
+                }
+                core.summary.write();
+            }
         }
         catch (err) {
             console.error(err);
