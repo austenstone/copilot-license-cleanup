@@ -109,14 +109,29 @@ jobs:
 #### Example deploying users from a CSV file 
 
 ```yml
+name: Copilot License Review
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+jobs:
+  copilot:
+    name: Copilot Seats
+    runs-on: ubuntu-latest
       # Checkout your repo so we can access the CSV file
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - uses: austenstone/copilot-license-cleanup@v1.1
+      - uses: austenstone/copilot-license-cleanup@v1.2
+        id: copilot_job
         with:
+          organization: octodemo, avocadocorp
           github-token: ${{ secrets.TOKEN }}
+          remove: false
+          remove-from-team: false
+          inactive-days: 30
           deploy-users: true
+          csv: true
           # Optional inputs
           deploy-users-dry-run: false    # Default is true
           deploy-users-csv: ./copilot-users.csv
