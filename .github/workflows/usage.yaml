@@ -13,6 +13,6 @@ jobs:
       - uses: ./
         with:
           github-token: ${{ secrets.TOKEN }}
-          organization: 'octodemo'
+          organization: 'myorg'
           inactive-days: 30
           csv: true

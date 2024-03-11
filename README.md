@@ -87,7 +87,7 @@ jobs:
       - uses: austenstone/copilot-license-cleanup@v1.2
         with:
           github-token: ${{ secrets.TOKEN }}
-          enterprise: octodemo
+          enterprise: myenterprise
 ```
 
 #### Example uploading inactive users JSON artifact (same could be done with deployed-seats)
@@ -125,7 +125,7 @@ jobs:
       - uses: austenstone/copilot-license-cleanup@v1.2
         id: copilot_job
         with:
-          organization: octodemo, avocadocorp
+          organization: exampleorg1, exampleorg2
           github-token: ${{ secrets.TOKEN }}
           remove: false
           remove-from-team: false
