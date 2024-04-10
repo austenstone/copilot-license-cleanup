@@ -256,6 +256,7 @@ const run = async (): Promise<void> => {
           core.info(`Removed ${response.data.seats_cancelled} seats`);
           console.log(typeof response.data.seats_cancelled);
           allRemovedSeatsCount += response.data.seats_cancelled;
+          return inactiveSeatsAssignedIndividually.map(seat => seat.assignee.login)
         });
       }
     }
