@@ -265,6 +265,19 @@ const run = async (): Promise<void> => {
       await core.group('Removing inactive seats from team', async () => {
         for (const seat of inactiveSeatsAssignedByTeam) {
           if (!seat.assigning_team || typeof(seat.assignee.login) !== 'string') continue;
+
+          const response = await octokit.request(`GET /orgs/{org}/teams/{team_slug}/memberships/{username}`, {
+            org: org,
+            team_slug: seat.assigning_team.slug,
+            username: seat.assignee.login
+          });
+          core.debug(`User ${seat.assignee.login} has ${response.data.role} role on team ${seat.assigning_team.slug}`)
+
+          if (response.data.role === 'maintainer'){
+            core.info(`User ${seat.assignee.login} is maintainer, skipping removal`)
+            continue
+          }
+
           await octokit.request('DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}', {
             org: org,
             team_slug: seat.assigning_team.slug,
