@@ -16,7 +16,7 @@ jobs:
       - uses: ./
         with:
           github-token: ${{ secrets.TOKEN }}
-          organization: 'myorg'
+          organization: ${{ vars.ORG }}
           inactive-days: 3
           remove: false
           csv: true
