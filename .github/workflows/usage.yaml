@@ -14,5 +14,6 @@ jobs:
         with:
           github-token: ${{ secrets.TOKEN }}
           organization: 'myorg'
-          inactive-days: 30
+          inactive-days: 3
+          remove: false
           csv: true
