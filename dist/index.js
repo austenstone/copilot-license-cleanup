@@ -41585,28 +41585,39 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         if (input.removeInactive) {
             const inactiveSeatsAssignedIndividually = inactiveSeats.filter(seat => !seat.assigning_team);
             if (inactiveSeatsAssignedIndividually.length > 0) {
-                core.group('Removing inactive seats', () => __awaiter(void 0, void 0, void 0, function* () {
+                yield core.group('Removing inactive seats', () => __awaiter(void 0, void 0, void 0, function* () {
                     const response = yield octokit.request(`DELETE /orgs/{org}/copilot/billing/selected_users`, {
                         org: org,
                         selected_usernames: inactiveSeatsAssignedIndividually.map(seat => seat.assignee.login),
                     });
                     core.info(`Removed ${response.data.seats_cancelled} seats`);
-                    console.log(typeof response.data.seats_cancelled);
                     allRemovedSeatsCount += response.data.seats_cancelled;
+                    core.info(`removed users:  ${inactiveSeatsAssignedIndividually.map(seat => seat.assignee.login)}`);
                 }));
             }
         }
         if (input.removefromTeam) {
             const inactiveSeatsAssignedByTeam = inactiveSeats.filter(seat => seat.assigning_team);
-            core.group('Removing inactive seats from team', () => __awaiter(void 0, void 0, void 0, function* () {
+            yield core.group('Removing inactive seats from team', () => __awaiter(void 0, void 0, void 0, function* () {
                 for (const seat of inactiveSeatsAssignedByTeam) {
                     if (!seat.assigning_team || typeof (seat.assignee.login) !== 'string')
                         continue;
+                    const response = yield octokit.request(`GET /orgs/{org}/teams/{team_slug}/memberships/{username}`, {
+                        org: org,
+                        team_slug: seat.assigning_team.slug,
+                        username: seat.assignee.login
+                    });
+                    core.debug(`User ${seat.assignee.login} has ${response.data.role} role on team ${seat.assigning_team.slug}`);
+                    if (response.data.role === 'maintainer') {
+                        core.info(`User ${seat.assignee.login} is maintainer, skipping removal`);
+                        continue;
+                    }
                     yield octokit.request('DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}', {
                         org: org,
                         team_slug: seat.assigning_team.slug,
                         username: seat.assignee.login
                     });
+                    core.info(`${seat.assigning_team.slug} removed from team ${seat.assignee.login}`);
                 }
             }));
         }
