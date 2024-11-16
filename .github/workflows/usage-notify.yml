@@ -15,7 +15,7 @@ jobs:
       - uses: ./
         with:
           github-token: ${{ secrets.TOKEN }}
-          organization: 'octodemo'
+          organization: 'myorg'
           inactive-days: 30
           csv: true
   notify-inactive:
@@ -26,7 +26,7 @@ jobs:
       matrix:
         user: ${{ fromJson(needs.copilot.outputs.inactive-seats) }}
     steps:
-      - uses: slackapi/slack-github-action@v1.24.0
+      - uses: slackapi/slack-github-action@v1.25.0
         with:
           channel-id: 'CHANNEL_ID,ANOTHER_CHANNEL_ID'
           slack-message: 'Hey <@${{ matrix.user }}>, you have not used Copilot for 30 days. Please contact your manager to free up your seat.'

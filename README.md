@@ -50,14 +50,14 @@ jobs:
     name: Copilot Seats
     runs-on: ubuntu-latest
     steps:
-      - uses: austenstone/copilot-license-cleanup@v1.2
+      - uses: austenstone/copilot-license-cleanup@v1.4
         with:
           github-token: ${{ secrets.TOKEN }}
 ```
 
 #### Example Auto remove
 ```yml
-      - uses: austenstone/copilot-license-cleanup@v1.2
+      - uses: austenstone/copilot-license-cleanup@v1.4
         with:
           github-token: ${{ secrets.TOKEN }}
           remove: true
@@ -66,7 +66,7 @@ jobs:
 
 #### Example Custom days before inactive
 ```yml
-      - uses: austenstone/copilot-license-cleanup@v1.2
+      - uses: austenstone/copilot-license-cleanup@v1.4
         with:
           github-token: ${{ secrets.TOKEN }}
           remove: true
@@ -76,7 +76,7 @@ jobs:
 
 #### Example Specifying multiple organizations: 
 ```yml
-      - uses: austenstone/copilot-license-cleanup@v1.2
+      - uses: austenstone/copilot-license-cleanup@v1.4
         with:
           github-token: ${{ secrets.TOKEN }}
           organization: exampleorg1, demoorg2, myorg3
@@ -84,15 +84,15 @@ jobs:
 
 #### Example specifying a GitHub Enterprise (to run on all organizations in the enterprise):
 ```yml
-      - uses: austenstone/copilot-license-cleanup@v1.2
+      - uses: austenstone/copilot-license-cleanup@v1.4
         with:
           github-token: ${{ secrets.TOKEN }}
-          enterprise: octodemo
+          enterprise: myenterprise
 ```
 
 #### Example uploading inactive users JSON artifact (same could be done with deployed-seats)
 ```yml
-      - uses: austenstone/copilot-license-cleanup@v1.2
+      - uses: austenstone/copilot-license-cleanup@v1.4
         id: copilot
         with:
           github-token: ${{ secrets.TOKEN }}
@@ -122,10 +122,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - uses: austenstone/copilot-license-cleanup@v1.2
+      - uses: austenstone/copilot-license-cleanup@v1.4
         id: copilot_job
         with:
-          organization: octodemo, avocadocorp
+          organization: exampleorg1, exampleorg2
           github-token: ${{ secrets.TOKEN }}
           remove: false
           remove-from-team: false

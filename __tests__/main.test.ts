@@ -9,7 +9,7 @@ const addInput = (key, value) => {
 
 const input: any = {
   'github-token': process.env.GITHUB_TOKEN,
-  'organization': process.env.ORGANIZATION || 'octodemo',
+  'organization': process.env.ORGANIZATION || 'austenstone',
   'inactive-days': process.env.INACTIVE_DAYS || '30',
   'remove': process.env.REMOVE || false,
   'remove-from-team': process.env.REMOVE_FROM_TEAM || false,
