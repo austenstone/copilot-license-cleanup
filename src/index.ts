@@ -6,8 +6,12 @@ import path from 'path';
 import { parse } from 'csv-parse/sync';
 import * as artifact from '@actions/artifact';
 import type { Endpoints } from "@octokit/types";
-import { SummaryTableRow } from '@actions/core/lib/summary';
-import { RequestError } from '@octokit/request-error';
+let RequestError;
+(async () => {
+  const module = await import('@octokit/request-error');
+  RequestError = module.RequestError;
+})();
+import { SummaryTableRow } from '@actions/core/lib/summary.js';
 
 
 interface Input {
@@ -18,6 +22,7 @@ interface Input {
   removefromTeam: boolean;
   inactiveDays: number;
   jobSummary: boolean;
+  externalIdentities: boolean;
   csv: boolean;
   deployUsers: boolean;
   deployUsersDryRun: boolean;
@@ -25,12 +30,12 @@ interface Input {
   deployValidationTime: number;
 }
 
-type SeatWithOrg = { 
-  last_activity_at: string | null; 
-  created_at: string; 
-  organization: string; 
-  assignee: { login: string; avatar_url: string; }; 
-  last_activity_editor: string | null; 
+type SeatWithOrg = {
+  last_activity_at: string | null;
+  created_at: string;
+  organization: string;
+  assignee: { login: string; avatar_url: string; };
+  last_activity_editor: string | null;
 };
 
 type UserList = {
@@ -47,13 +52,13 @@ type Octokit = ReturnType<typeof github.getOctokit>;
 const orgData = new Map();  // Map<org, { seats: [], inactiveSeats: [] }>
 
 // Function to get all seats in an organization
-// Returns an array of seats 
+// Returns an array of seats
 async function getOrgData(org: string, octokit: Octokit) {
   const seats = await core.group('Fetching GitHub Copilot seats for ' + org, async () => {
 
     // No type exists for copilot endpoint yet
     let _seats: Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]['data']['seats'] = [], totalSeats = 0, page = 1;
-    try { 
+    try {
       do {
         try {
           const response = await octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
@@ -63,10 +68,10 @@ async function getOrgData(org: string, octokit: Octokit) {
           _seats = _seats.concat(response.data.seats);
           page++;
         } catch (error) {
-          if (error instanceof RequestError && error.message === "Copilot Business is not enabled for this organization.") {
+          if (error instanceof RequestError && (error as Error).message === "Copilot Business is not enabled for this organization.") {
             core.error((error as Error).message + ` (${org})`);
             break;
-          } else if (error instanceof RequestError && error.status === 404) {
+          } else if (error instanceof RequestError && (error as typeof RequestError).status === 404) {
             core.error((error as Error).message + ` (${org}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
             break;
           } else {
@@ -89,6 +94,74 @@ async function getOrgData(org: string, octokit: Octokit) {
 
 }
 
+type ExternalIdentity = {
+  guid: string;
+  samlIdentity: {
+    nameId: string;
+    username: string;
+  };
+  user: {
+    login: string;
+    name: string;
+    email: string;
+  };
+};
+
+async function getUserExternalIdentity(org: string, user: string, octokit: Octokit): Promise<ExternalIdentity | null> {
+  type GraphQlResponseType = {
+    organization: {
+      samlIdentityProvider: {
+        externalIdentities: {
+          nodes: Array<{
+            guid: string;
+            samlIdentity: {
+              nameId: string;
+              username: string;
+            };
+            user: {
+              login: string;
+              name: string;
+              email: string;
+            };
+          }>;
+        };
+      };
+    };
+  };
+
+  const query = `
+    query ($org: String!, $user: String!) {
+      organization(login: $org) {
+        samlIdentityProvider {
+          externalIdentities(membersOnly: true, login: $user, first: 1) {
+            nodes {
+              guid
+              samlIdentity {
+                nameId
+                username
+              }
+              user {
+                login
+                name
+                email
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  const variables = { org, user };
+  const response = await octokit.graphql<GraphQlResponseType>(query, variables);
+
+  if (response.organization.samlIdentityProvider.externalIdentities.nodes.length === 0) {
+    return null;
+  }
+
+  return response.organization.samlIdentityProvider.externalIdentities.nodes[0];
+}
+
 function getInactiveSeats(org: string, seats, inactiveDays: number) {
   const msToDays = (d) => Math.ceil(d / (1000 * 3600 * 24));
 
@@ -104,7 +177,7 @@ function getInactiveSeats(org: string, seats, inactiveDays: number) {
     return msToDays(diff) > inactiveDays;
   }).sort((a, b) => (
     a.last_activity_at === null || a.last_activity_at === undefined || b.last_activity_at === null || b.last_activity_at === undefined ?
-    -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()
+      -1 : new Date(a.last_activity_at).getTime() - new Date(b.last_activity_at).getTime()
   ));
 
   core.info(`Found ${inactiveSeats.length} inactive seats`);
@@ -121,7 +194,7 @@ function getInactiveSeats(org: string, seats, inactiveDays: number) {
 }
 
 // Function to get all members in an organization
-// Returns an array of seats 
+// Returns an array of seats
 async function getOrgMembers(org: string, octokit: Octokit) {
   const members = await core.group('Fetching GitHub Organization Members for ' + org, async () => {
     let members = [];
@@ -136,7 +209,7 @@ async function getOrgMembers(org: string, octokit: Octokit) {
         members = members.concat(response.data);
         page++;
       } catch (error) {
-        if (error instanceof RequestError && error.name === "HttpError" && error.message === "Not Found") {
+        if (error instanceof RequestError && (error as typeof RequestError).name === "HttpError" && (error as typeof RequestError).message === "Not Found") {
           core.error(`Organization (${org}) not found.  Please check that the organization exists and you are an org owner.`);
           break;
         } else {
@@ -166,6 +239,7 @@ export function getInputs(): Input {
   result.removefromTeam = core.getBooleanInput('remove-from-team');
   result.inactiveDays = parseInt(core.getInput('inactive-days'));
   result.jobSummary = core.getBooleanInput('job-summary');
+  result.externalIdentities = core.getBooleanInput('external-identities');
   result.csv = core.getBooleanInput('csv');
   result.deployUsers = core.getBooleanInput('deploy-users');
   result.deployUsersDryRun = core.getBooleanInput('deploy-users-dry-run');
@@ -194,6 +268,10 @@ const run = async (): Promise<void> => {
     interface GraphQlResponse {
       enterprise: {
         organizations: {
+          pageInfo: {
+            endCursor: string;
+            hasNextPage: boolean;
+          };
           nodes: Array<{
             login: string;
           }>;
@@ -224,7 +302,7 @@ const run = async (): Promise<void> => {
 
       hasNextPage = response.enterprise.organizations.pageInfo.hasNextPage;
       afterCursor = response.enterprise.organizations.pageInfo.endCursor;
-      
+
     } while (hasNextPage);
 
     core.info(`Found ${organizations.length} organizations.`);
@@ -240,7 +318,24 @@ const run = async (): Promise<void> => {
     // Process each organization
     const seats = await getOrgData(org, octokit);
 
-    const inactiveSeats = getInactiveSeats(org, seats, input.inactiveDays);
+    let inactiveSeats = getInactiveSeats(org, seats, input.inactiveDays);
+
+    // Fetch external identity information for each inactive seat
+    if (input.externalIdentities) {
+      inactiveSeats = await Promise.all(inactiveSeats.map(async (seat) => {
+        try {
+          const externalIdentity = await getUserExternalIdentity(org, seat.assignee.login, octokit);
+          return externalIdentity !== null ? { ...seat, externalIdentity } : { ...seat };
+        } catch (error) {
+          core.error(`Failed to fetch external identities for ${seat.assignee.login} in ${org}: ${error}`);
+          return seat;
+        }
+      }));
+    }
+
+    // Update orgData with inactive seats including external identities
+    const orgDataEntry = orgData.get(org) || {};
+    orgData.set(org, { ...orgDataEntry, inactiveSeats: inactiveSeats });
 
     allInactiveSeats = [...allInactiveSeats, ...inactiveSeats];
     allSeatsCount += seats.length;
@@ -264,7 +359,7 @@ const run = async (): Promise<void> => {
       const inactiveSeatsAssignedByTeam = inactiveSeats.filter(seat => seat.assigning_team);
       await core.group('Removing inactive seats from team', async () => {
         for (const seat of inactiveSeatsAssignedByTeam) {
-          if (!seat.assigning_team || typeof(seat.assignee.login) !== 'string') continue;
+          if (!seat.assigning_team || typeof (seat.assignee.login) !== 'string') continue;
 
           const response = await octokit.request(`GET /orgs/{org}/teams/{team_slug}/memberships/{username}`, {
             org: org,
@@ -273,7 +368,7 @@ const run = async (): Promise<void> => {
           });
           core.debug(`User ${seat.assignee.login} has ${response.data.role} role on team ${seat.assigning_team.slug}`)
 
-          if (response.data.role === 'maintainer'){
+          if (response.data.role === 'maintainer') {
             core.info(`User ${seat.assignee.login} is maintainer, skipping removal`)
             continue
           }
@@ -283,7 +378,7 @@ const run = async (): Promise<void> => {
             team_slug: seat.assigning_team.slug,
             username: seat.assignee.login
           })
-	        core.info(`${seat.assignee.login} removed from team ${seat.assigning_team.slug}`)
+          core.info(`${seat.assignee.login} removed from team ${seat.assigning_team.slug}`)
         }
       });
     }
@@ -291,27 +386,27 @@ const run = async (): Promise<void> => {
     if (input.jobSummary) {
       await core.summary
         .addHeading(`${org} - Inactive Seats: ${inactiveSeats.length.toString()} / ${seats.length.toString()}`)
-        if (seats.length > 0) {
-          core.summary.addTable([
-            [
-              { data: 'Avatar', header: true },
-              { data: 'Login', header: true },
-              { data: 'Last Activity', header: true },
-              { data: 'Last Editor Used', header: true }
-            ],
-            ...inactiveSeats.sort((a, b) => {
-              const loginA = (a.assignee.login || 'Unknown') as string;
-              const loginB = (b.assignee.login || 'Unknown') as string;
-              return loginA.localeCompare(loginB);
-            }).map(seat => [
-              `<img src="${seat.assignee.avatar_url}" width="33" />`,
-              seat.assignee.login || 'Unknown',
-              seat.last_activity_at === null ? 'No activity' : momemt(seat.last_activity_at).fromNow(),
-              seat.last_activity_editor || 'Unknown'
-            ] as SummaryTableRow)
-          ])
-        }
-        core.summary.addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${org}/settings/copilot/seat_management`)
+      if (seats.length > 0) {
+        core.summary.addTable([
+          [
+            { data: 'Avatar', header: true },
+            { data: 'Login', header: true },
+            { data: 'Last Activity', header: true },
+            { data: 'Last Editor Used', header: true }
+          ],
+          ...inactiveSeats.sort((a, b) => {
+            const loginA = (a.assignee.login || 'Unknown') as string;
+            const loginB = (b.assignee.login || 'Unknown') as string;
+            return loginA.localeCompare(loginB);
+          }).map(seat => [
+            `<img src="${seat.assignee.avatar_url}" width="33" />`,
+            seat.assignee.login || 'Unknown',
+            seat.last_activity_at === null ? 'No activity' : momemt(seat.last_activity_at).fromNow(),
+            seat.last_activity_editor || 'Unknown'
+          ] as SummaryTableRow)
+        ])
+      }
+      core.summary.addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${org}/settings/copilot/seat_management`)
         .write()
     }
   }
@@ -319,20 +414,20 @@ const run = async (): Promise<void> => {
   if (input.deployUsers) {
     core.info(`Fetching all deployment information from CSV ${input.deployUsersCsv}...`);
     // Get users from deployUsersCsv Input
-    
-    try {  
+
+    try {
       const csvFilePath = path.resolve(process.env.GITHUB_WORKSPACE || __dirname, input.deployUsersCsv);
-    
+
       // Check if the file exists before trying to read it
       if (!existsSync(csvFilePath)) {
         core.setFailed(`File not found: ${csvFilePath}`);
         return;
       }
-    
+
       const fileContent = readFileSync(csvFilePath, { encoding: 'utf-8' });
       core.debug(`File content: ${fileContent}`)
 
-      const records: UserList[] = parse(fileContent, { 
+      const records: UserList[] = parse(fileContent, {
         columns: true,
         skip_empty_lines: true,
         trim: true,
@@ -343,22 +438,22 @@ const run = async (): Promise<void> => {
 
         // Check for empty values
         const hasEmptyValues = Object.values(record).some(value => value === '');
-        
+
         // Check for valid date
         const date = new Date(record.activation_date);
         const hasInvalidDate = isNaN(date.getTime());
-        
+
         if (hasEmptyValues || hasInvalidDate) {
           core.error(`Skipping record with ${hasEmptyValues ? 'empty values' : 'invalid date'}: ${JSON.stringify(record)}`);
           return false;
         } else {
-          
+
           // Check that record.activation_date is within input.deployValidationTime days from today.
           const today = new Date();
           const currentTime = today.getTime();
           const validationTime = today.setDate(today.getDate() - input.deployValidationTime);
           const activationTime = date.getTime();  // date = record.activation_date
-          const isDateWithinWindow = validationTime <= activationTime  && activationTime <= currentTime;
+          const isDateWithinWindow = validationTime <= activationTime && activationTime <= currentTime;
 
           if (!isDateWithinWindow) {
             core.info(`Skipping record due to activation date outside ${input.deployValidationTime} day window: ${JSON.stringify(record)}`);
@@ -378,11 +473,11 @@ const run = async (): Promise<void> => {
       const uniqueOrganizations = new Set(usersToDeploy.map(user => user.organization));
       for (const organization of uniqueOrganizations) {
         try {
-            const members = await getOrgMembers(organization, octokit);
-            core.info(`Found ${members.length} members in ${organization}.`);
-          } catch (error) {
-            core.error(`Failed to fetch members for organization ${organization}: ${error}`);
-          }
+          const members = await getOrgMembers(organization, octokit);
+          core.info(`Found ${members.length} members in ${organization}.`);
+        } catch (error) {
+          core.error(`Failed to fetch members for organization ${organization}: ${error}`);
+        }
       }
 
       // Process users one at a time
@@ -400,7 +495,7 @@ const run = async (): Promise<void> => {
             core.error(`Failed to fetch data for organization ${user.organization}: ${error}`);
             continue;
           }
-      
+
           // Confirm the org data was added
           if (!orgData.get(user.organization)) {
             core.error(`Organization not found: ${user.organization}`);
@@ -408,7 +503,7 @@ const run = async (): Promise<void> => {
           }
         } else {
           core.debug(`Organization Data found for ${user.organization}`);
-        
+
           // Organization Exists - Check if the user exists in the organization
           if (user.login != orgData.get(user.organization)?.members.find(member => member.login === user.login)?.login) {
             // Note - Could do setFailed here, but it's not really a failure.  Just a warning.
@@ -422,7 +517,7 @@ const run = async (): Promise<void> => {
               role: 'member',
             });
             */
-            
+
           } else {
             core.debug(`User ${user.login} is a member of ${user.organization}`);
 
@@ -448,7 +543,7 @@ const run = async (): Promise<void> => {
                   deployedSeats.push(user);
 
                 } catch (error) {
-                  if (error instanceof RequestError && error.message === "Copilot Business is not enabled for this organization.") {
+                  if (error instanceof RequestError && (error as Error).message === "Copilot Business is not enabled for this organization.") {
                     core.error((error as Error).message + ` (${user.organization})`);
                   } else {
                     throw error;
@@ -467,94 +562,94 @@ const run = async (): Promise<void> => {
       // Add Deployment Summary Output
       if (input.jobSummary) {
         await core.summary
-          if (!input.deployUsersDryRun) {
-            core.summary.addHeading(`Deployed Seats: ${deployedSeats.length.toString()}`)
-          } else {
-            core.summary.addHeading(`DRY RUN: Seats to deploy: ${deployedSeats.length.toString()}`)
-          }
-          if (deployedSeats.length > 0) {
-            core.summary.addTable([
-              [
-                { data: 'Organization', header: true },
-                { data: 'Group', header: true },
-                { data: 'Login', header: true },
-                { data: 'Activation Date', header: true }
-              ],
-              ...deployedSeats.sort((a, b) => {
-                const loginA = (a.login || 'Unknown') as string;
-                const loginB = (b.login || 'Unknown') as string;
-                return loginA.localeCompare(loginB);
-              }).map(seat => [
-                seat.organization,
-                seat.deployment_group,
-                seat.login,
-                seat.activation_date
-              ] as SummaryTableRow)
-            ])
-          }
-
-          // Add a summary of deployed users by group including number of users with a seat out of total users in the group
-          interface Counts {
-            total: number;
-            deployed: number;
-            inactive: number;
-          }
-          
-          interface GroupCounts {
-            [group: string]: Counts;
-          }
-          
-          const groupCounts = records.reduce((counts: GroupCounts, record) => {
-            if (!counts[record.deployment_group]) {
-              counts[record.deployment_group] = { total: 0, deployed: 0, inactive: 0 };
-            }
-            counts[record.deployment_group].total++;
-            // Add deployed count if the user previously had a seat
-            if ((orgData.get(record.organization)?.seats ?? []).find(seat => seat.assignee.login === record.login && seat.pending_cancellation_date === null)) {
-              counts[record.deployment_group].deployed++;
-            }
-            // Add net new deployed users from deployedSeats
-            if (deployedSeats.find(seat => seat.login === record.login)) {
-              counts[record.deployment_group].deployed++;
-            }
-            // Add inactive count if the user is inactive
-            if (allInactiveSeats.find(seat => seat.assignee.login === record.login && seat.organization === record.organization)) {
-              counts[record.deployment_group].inactive++;
-            }
-            return counts;
-          }, {});
-
-          const groupCountsArray = Object.entries(groupCounts)
-            .sort((a, b) => a[0].localeCompare(b[0])) // Sort by group name
-            .map(([group, counts]) => ({
-              group,
-              total: counts.total,
-              deployed: counts.deployed,
-              inactive: counts.inactive
-          }));
-
-          core.debug(`Group Counts: ${JSON.stringify(groupCounts, null, 2)}`);
-
-          if (!input.deployUsersDryRun) {
-            core.summary.addHeading(`Deployment Status`)
-          } else {
-            core.summary.addHeading(`DRY RUN: Deployment Status`)
-          }
-
+        if (!input.deployUsersDryRun) {
+          core.summary.addHeading(`Deployed Seats: ${deployedSeats.length.toString()}`)
+        } else {
+          core.summary.addHeading(`DRY RUN: Seats to deploy: ${deployedSeats.length.toString()}`)
+        }
+        if (deployedSeats.length > 0) {
           core.summary.addTable([
             [
+              { data: 'Organization', header: true },
               { data: 'Group', header: true },
-              { data: 'Deployed Seats', header: true },
-              { data: 'Total Seats', header: true },
-              { data: 'Inactive Seats', header: true }
+              { data: 'Login', header: true },
+              { data: 'Activation Date', header: true }
             ],
-            ...groupCountsArray.map(grouprecord => [
-              grouprecord.group,
-              grouprecord.deployed.toString(),
-              grouprecord.total.toString(),
-              grouprecord.inactive.toString()
+            ...deployedSeats.sort((a, b) => {
+              const loginA = (a.login || 'Unknown') as string;
+              const loginB = (b.login || 'Unknown') as string;
+              return loginA.localeCompare(loginB);
+            }).map(seat => [
+              seat.organization,
+              seat.deployment_group,
+              seat.login,
+              seat.activation_date
             ] as SummaryTableRow)
           ])
+        }
+
+        // Add a summary of deployed users by group including number of users with a seat out of total users in the group
+        interface Counts {
+          total: number;
+          deployed: number;
+          inactive: number;
+        }
+
+        interface GroupCounts {
+          [group: string]: Counts;
+        }
+
+        const groupCounts = records.reduce((counts: GroupCounts, record) => {
+          if (!counts[record.deployment_group]) {
+            counts[record.deployment_group] = { total: 0, deployed: 0, inactive: 0 };
+          }
+          counts[record.deployment_group].total++;
+          // Add deployed count if the user previously had a seat
+          if ((orgData.get(record.organization)?.seats ?? []).find(seat => seat.assignee.login === record.login && seat.pending_cancellation_date === null)) {
+            counts[record.deployment_group].deployed++;
+          }
+          // Add net new deployed users from deployedSeats
+          if (deployedSeats.find(seat => seat.login === record.login)) {
+            counts[record.deployment_group].deployed++;
+          }
+          // Add inactive count if the user is inactive
+          if (allInactiveSeats.find(seat => seat.assignee.login === record.login && seat.organization === record.organization)) {
+            counts[record.deployment_group].inactive++;
+          }
+          return counts;
+        }, {});
+
+        const groupCountsArray = Object.entries(groupCounts)
+          .sort((a, b) => a[0].localeCompare(b[0])) // Sort by group name
+          .map(([group, counts]) => ({
+            group,
+            total: counts.total,
+            deployed: counts.deployed,
+            inactive: counts.inactive
+          }));
+
+        core.debug(`Group Counts: ${JSON.stringify(groupCounts, null, 2)}`);
+
+        if (!input.deployUsersDryRun) {
+          core.summary.addHeading(`Deployment Status`)
+        } else {
+          core.summary.addHeading(`DRY RUN: Deployment Status`)
+        }
+
+        core.summary.addTable([
+          [
+            { data: 'Group', header: true },
+            { data: 'Deployed Seats', header: true },
+            { data: 'Total Seats', header: true },
+            { data: 'Inactive Seats', header: true }
+          ],
+          ...groupCountsArray.map(grouprecord => [
+            grouprecord.group,
+            grouprecord.deployed.toString(),
+            grouprecord.total.toString(),
+            grouprecord.inactive.toString()
+          ] as SummaryTableRow)
+        ])
 
         core.summary.write();
       }
@@ -587,7 +682,7 @@ const run = async (): Promise<void> => {
         ])
       ].map(row => row.join(',')).join('\n');
       writeFileSync('inactive-seats.csv', csv);
-      const artifactClient = artifact.create();
+      const artifactClient = new artifact.DefaultArtifactClient();
       await artifactClient.uploadArtifact('inactive-seats', ['inactive-seats.csv'], '.');
     });
   }

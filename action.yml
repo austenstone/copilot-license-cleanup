@@ -1,4 +1,4 @@
-name: Copilot License Management 
+name: Copilot License Management
 author: Austen Stone
 description: Automations to manage copilot licenses. Cleanup inactive, rollouts, reporting.
 branding:
@@ -11,7 +11,7 @@ inputs:
     default: ${{ github.repository_owner }}
     required: true
   enterprise:
-    description: Search for all organizations in the enterprise (overrides organization) 
+    description: Search for all organizations in the enterprise (overrides organization)
     default: null
     required: false
   github-token:
@@ -33,6 +33,10 @@ inputs:
   job-summary:
     description: Whether to output a summary of the job
     default: true
+    required: false
+  external-identities:
+    description: Whether to add external user identities to the output
+    default: false
     required: false
   csv:
     description: Whether to output a CSV of the inactive users

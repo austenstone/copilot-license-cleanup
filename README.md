@@ -5,11 +5,13 @@ Run this action on a schedule to automatically remove inactive Copilot licenses.
 In addition to this it can also deploy users from a CSV file.  This is useful as you are adopting Copilot as it can help facilitate the process of adding users to your organization.
 
 ## Usage
+
 Create a workflow (eg: `.github/workflows/copilot-license-management.yml`). See [Creating a Workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
 
 ### Deploying users from a CSV file
 
 If you want to deploy users from a CSV file you will need to create a CSV file with the following columns:
+
 - `organization` - The organization to add the user to
 - `deployment_group` - An arbitrary group name used to track the deployments
 - `login` - The user's GitHub Login name to add
@@ -29,15 +31,18 @@ If you are using Enterprise Managed Users, it may be easier to use a group from 
 
 ### PAT(Personal Access Token)
 
-You will need to [create a PAT(Personal Access Token)](https://github.com/settings/tokens/new?scopes=manage_billing:copilot) that has `manage_billing:copilot` access.  If you are specifying an 'enterprise' rather than individual organizations you must also include the `read:org` and `read:enterprise` scopes. 
+You will need to [create a PAT(Personal Access Token)](https://github.com/settings/tokens/new?scopes=manage_billing:copilot) that has `manage_billing:copilot` access.  If you are specifying an 'enterprise' rather than individual organizations you must also include the `read:org` and `read:enterprise` scopes.
 
-Add this PAT as a secret `TOKEN` so we can use it for input `github-token`, see [Creating encrypted secrets for a repository](https://docs.github.com/en/enterprise-cloud@latest/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository). 
+If you are including external identities to the output must also include the `read:org` and `user:email` scopes.
+
+Add this PAT as a secret `TOKEN` so we can use it for input `github-token`, see [Creating encrypted secrets for a repository](https://docs.github.com/en/enterprise-cloud@latest/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository).
+
 ### Organizations
 
 If your organization has SAML enabled you must authorize the PAT, see [Authorizing a personal access token for use with SAML single sign-on](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-saml-single-sign-on/authorizing-a-personal-access-token-for-use-with-saml-single-sign-on).
 
-
 #### Example
+
 ```yml
 name: Cleanup Copilot Licenses
 on:
@@ -56,6 +61,7 @@ jobs:
 ```
 
 #### Example Auto remove
+
 ```yml
       - uses: austenstone/copilot-license-cleanup@v1.4
         with:
@@ -65,6 +71,7 @@ jobs:
 ```
 
 #### Example Custom days before inactive
+
 ```yml
       - uses: austenstone/copilot-license-cleanup@v1.4
         with:
@@ -74,7 +81,8 @@ jobs:
           inactive-days: 10
 ```
 
-#### Example Specifying multiple organizations: 
+#### Example Specifying multiple organizations
+
 ```yml
       - uses: austenstone/copilot-license-cleanup@v1.4
         with:
@@ -82,7 +90,8 @@ jobs:
           organization: exampleorg1, demoorg2, myorg3
 ```
 
-#### Example specifying a GitHub Enterprise (to run on all organizations in the enterprise):
+#### Example specifying a GitHub Enterprise (to run on all organizations in the enterprise)
+
 ```yml
       - uses: austenstone/copilot-license-cleanup@v1.4
         with:
@@ -91,6 +100,7 @@ jobs:
 ```
 
 #### Example uploading inactive users JSON artifact (same could be done with deployed-seats)
+
 ```yml
       - uses: austenstone/copilot-license-cleanup@v1.4
         id: copilot
@@ -106,7 +116,7 @@ jobs:
           path: inactive-seats.json
 ```
 
-#### Example deploying users from a CSV file 
+#### Example deploying users from a CSV file
 
 ```yml
 name: Copilot License Review
@@ -140,42 +150,46 @@ jobs:
 
 <details>
   <summary>Job summary example</summary>
-  
+
   <img src="https://github.com/austenstone/copilot-license-cleanup/assets/22425467/4695fc23-e9c7-4403-ba04-2de0e2d36242"/>
-  
+
 </details>
 
-
 ## ➡️ Inputs
+
 Various inputs are defined in [`action.yml`](action.yml):
 
-| Name | Description | Default |
-| --- | - | - |
-| **github&#x2011;token** | Token to use to authorize. | ${{&nbsp;github.token&nbsp;}} |
-| organization | The organization(s) to use for the action (comma separated)| ${{&nbsp;github.repository_owner&nbsp;}} |
-| enterprise | (optional) All organizations in this enterprise (overrides organization) | null |
-| remove | Whether to remove inactive users | false |
-| remove-from-team | Whether to remove inactive users from their assigning team | false |
-| inactive&#x2011;days | The number of days to consider a user inactive | 90 |
-| job-summary | Whether to output a summary of the job | true |
-| csv | Whether to output a CSV of inactive users | false |
-| deploy-users | Whether to deploy users from a CSV file | false |
-| deploy-users-dry-run | Whether to perform a dry run when deploying users | true |
-| deploy-users-csv | CSV file location if deploying users | ./copilot-users.csv |
-| deploy-validation-time | The number of days to attempt to deploy the user beyond activation date | 3 |
+| Name                    | Description                                                              | Default                                  |
+| ----------------------- | ------------------------------------------------------------------------ | ---------------------------------------- |
+| **github&#x2011;token** | Token to use to authorize.                                               | ${{&nbsp;github.token&nbsp;}}            |
+| organization            | The organization(s) to use for the action (comma separated)              | ${{&nbsp;github.repository_owner&nbsp;}} |
+| enterprise              | (optional) All organizations in this enterprise (overrides organization) | null                                     |
+| remove                  | Whether to remove inactive users                                         | false                                    |
+| remove-from-team        | Whether to remove inactive users from their assigning team               | false                                    |
+| inactive&#x2011;days    | The number of days to consider a user inactive                           | 90                                       |
+| job-summary             | Whether to output a summary of the job                                   | true                                     |
+| external-identities     | Weather to add external user identities to the output                    | false                                    |
+| csv                     | Whether to output a CSV of inactive users                                | false                                    |
+| deploy-users            | Whether to deploy users from a CSV file                                  | false                                    |
+| deploy-users-dry-run    | Whether to perform a dry run when deploying users                        | true                                     |
+| deploy-users-csv        | CSV file location if deploying users                                     | ./copilot-users.csv                      |
+| deploy-validation-time  | The number of days to attempt to deploy the user beyond activation date  | 3                                        |
 
 ## ⬅️ Outputs
-| Name | Description |
-| --- | - |
-| inactive-seats | JSON array of inactive seats |
+
+| Name                | Description                  |
+| ------------------- | ---------------------------- |
+| inactive-seats      | JSON array of inactive seats |
 | inactive-seat-count | The number of inactive seats |
-| removed-seats | The number of seats removed |
-| seat-count | The total number of seats |
-| deployed-seats | JSON array of deployed seats |
+| removed-seats       | The number of seats removed  |
+| seat-count          | The total number of seats    |
+| deployed-seats      | JSON array of deployed seats |
 | deployed-seat-count | The number of deployed seats |
 
 ## How does it work?
+
 We're simply leveraging the [GitHub Copilot API](https://docs.github.com/en/rest/copilot). First we fetch all the Copilot seats and filter them to only inactive seats. Then if the seat is assigned directly we remove it but if it's assigned through a team we remove the user from the team. Those inactive users are reported as a CSV and a job summary table.
 
 ## Further help
+
 To get more help on the Actions see [documentation](https://docs.github.com/en/actions).

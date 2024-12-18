@@ -11,8 +11,11 @@ const input: any = {
   'github-token': process.env.GITHUB_TOKEN,
   'organization': process.env.ORGANIZATION || 'austenstone',
   'inactive-days': process.env.INACTIVE_DAYS || '30',
+  'external-identities': process.env.EXTERNAL_IDENTITIES || false,
   'remove': process.env.REMOVE || false,
   'remove-from-team': process.env.REMOVE_FROM_TEAM || false,
+  'deploy-users': process.env.DEPLOY_USERS || false,
+  'deploy-users-dry-run': process.env.DEPLOY_USERS_DRY_RUN || false,
   'job-summary': process.env.JOB_SUMMARY || false,
   'csv': process.env.CSV || false,
 }
@@ -25,7 +28,8 @@ test('test run', () => {
   const options: cp.ExecFileSyncOptions = {
     env: process.env,
   };
-  
+
   const spawned = cp.spawnSync(np, [ip], options);
   console.log(spawned.stdout.toString());
+  console.log(spawned.stderr.toString());
 });
