@@ -1,8 +1,8 @@
 name: Notify Inactive Copilot Licenses
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 0 * * *"
+  # schedule:
+  #   - cron: "0 0 * * *"
 
 jobs:
   copilot:
@@ -15,7 +15,7 @@ jobs:
       - uses: ./
         with:
           github-token: ${{ secrets.TOKEN }}
-          organization: 'myorg'
+          organization: ${{ vars.ORG }}
           inactive-days: 30
           csv: true
   notify-inactive:
