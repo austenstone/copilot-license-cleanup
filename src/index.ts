@@ -19,11 +19,6 @@ interface Input {
   inactiveDays: number;
   jobSummary: boolean;
   csv: boolean;
-
-  deployUsers: boolean;
-  deployUsersDryRun: boolean;
-  deployUsersCsv: string;
-  deployValidationTime: number;
 }
 
 export function getInputs(): Input {
@@ -36,11 +31,6 @@ export function getInputs(): Input {
   result.inactiveDays = parseInt(core.getInput('inactive-days'));
   result.jobSummary = core.getBooleanInput('job-summary');
   result.csv = core.getBooleanInput('csv');
-
-  result.deployUsers = core.getBooleanInput('deploy-users');
-  result.deployUsersDryRun = core.getBooleanInput('deploy-users-dry-run');
-  result.deployUsersCsv = core.getInput('deploy-users-csv');
-  result.deployValidationTime = parseInt(core.getInput('deploy-validation-time'));
   return result;
 }
 
