@@ -38,7 +38,7 @@ inputs:
     description: Whether to output a CSV of the inactive users
     default: false
     required: false
-  artifactName:
+  artifact-name:
     description: The name of the artifact to upload
     default: inactive-copilot-seats
     required: false
