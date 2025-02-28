@@ -41617,7 +41617,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                         team_slug: seat.assigning_team.slug,
                         username: seat.assignee.login
                     });
-                    core.info(`${seat.assigning_team.slug} removed from team ${seat.assignee.login}`);
+                    core.info(`${seat.assignee.login} removed from team ${seat.assigning_team.slug}`);
                 }
             }));
         }
