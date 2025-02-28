@@ -41430,10 +41430,6 @@ function getInputs() {
     result.inactiveDays = parseInt(core.getInput('inactive-days'));
     result.jobSummary = core.getBooleanInput('job-summary');
     result.csv = core.getBooleanInput('csv');
-    result.deployUsers = core.getBooleanInput('deploy-users');
-    result.deployUsersDryRun = core.getBooleanInput('deploy-users-dry-run');
-    result.deployUsersCsv = core.getInput('deploy-users-csv');
-    result.deployValidationTime = parseInt(core.getInput('deploy-validation-time'));
     return result;
 }
 exports.getInputs = getInputs;
