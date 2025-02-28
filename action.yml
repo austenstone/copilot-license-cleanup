@@ -40,7 +40,7 @@ inputs:
     required: false
   artifactName:
     description: The name of the artifact to upload
-    default: inactive-copilot-seats.csv
+    default: inactive-copilot-seats
     required: false
   # deploy-users:
   #   description: Whether to deploy users from a CSV file
