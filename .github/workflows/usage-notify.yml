@@ -15,7 +15,7 @@ jobs:
       - uses: ./
         with:
           github-token: ${{ secrets.TOKEN }}
-          organization: 'myorg'
+          organization: 'octodemo'
           inactive-days: 30
           csv: true
   notify-inactive:
