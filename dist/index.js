@@ -41430,6 +41430,7 @@ function getInputs() {
     result.inactiveDays = parseInt(core.getInput('inactive-days'));
     result.jobSummary = core.getBooleanInput('job-summary');
     result.csv = core.getBooleanInput('csv');
+    result.artifactName = core.getInput('artifact-name');
     return result;
 }
 exports.getInputs = getInputs;
@@ -41574,6 +41575,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                 }
                 return 0;
             });
+            const fileName = 'inactive-seats.csv';
             const csv = [
                 ['Organization', 'Login', 'Last Activity', 'Last Editor Used'],
                 ...sortedSeats.map(seat => [
@@ -41583,14 +41585,16 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
                     (seat === null || seat === void 0 ? void 0 : seat.last_activity_editor) || '-'
                 ])
             ].map(row => row.join(',')).join('\n');
-            (0, fs_1.writeFileSync)('inactive-seats.csv', csv);
+            (0, fs_1.writeFileSync)(fileName, csv);
             const artifactClient = artifact.create();
-            yield artifactClient.uploadArtifact('inactive-seats', ['inactive-seats.csv'], '.');
+            yield artifactClient.uploadArtifact(input.artifactName, [fileName], '.');
         }));
     }
     core.setOutput('inactive-seats', JSON.stringify(allSeats));
-    core.setOutput('inactive-seat-count', allSeats.length.toString());
+    const totalInactiveSeats = Object.values(allSeats).reduce((sum, org) => sum + org.inactive.length, 0);
+    core.setOutput('inactive-seat-count', totalInactiveSeats.toString());
     core.setOutput('removed-seats', allRemovedSeatsCount.toString());
+    core.setOutput('seat-count', Object.values(allSeats).reduce((sum, org) => sum + (org.total_seats || 0), 0).toString());
 });
 run();
 

@@ -19,6 +19,7 @@ interface Input {
   inactiveDays: number;
   jobSummary: boolean;
   csv: boolean;
+  artifactName: string;
 }
 
 export function getInputs(): Input {
@@ -31,6 +32,7 @@ export function getInputs(): Input {
   result.inactiveDays = parseInt(core.getInput('inactive-days'));
   result.jobSummary = core.getBooleanInput('job-summary');
   result.csv = core.getBooleanInput('csv');
+  result.artifactName = core.getInput('artifact-name');
   return result;
 }
 
@@ -205,6 +207,7 @@ const run = async (): Promise<void> => {
         return 0;
       });
 
+      const fileName = 'inactive-seats.csv';
       const csv = [
         ['Organization', 'Login', 'Last Activity', 'Last Editor Used'],
         ...sortedSeats.map(seat => [
@@ -214,15 +217,17 @@ const run = async (): Promise<void> => {
           seat?.last_activity_editor || '-'
         ])
       ].map(row => row.join(',')).join('\n');
-      writeFileSync('inactive-seats.csv', csv);
+      writeFileSync(fileName, csv);
       const artifactClient = artifact.create();
-      await artifactClient.uploadArtifact('inactive-seats', ['inactive-seats.csv'], '.');
+      await artifactClient.uploadArtifact(input.artifactName, [fileName], '.');
     });
   }
 
   core.setOutput('inactive-seats', JSON.stringify(allSeats));
-  core.setOutput('inactive-seat-count', allSeats.length.toString());
+  const totalInactiveSeats = Object.values(allSeats).reduce((sum, org) => sum + org.inactive.length, 0);
+  core.setOutput('inactive-seat-count', totalInactiveSeats.toString());
   core.setOutput('removed-seats', allRemovedSeatsCount.toString());
+  core.setOutput('seat-count', Object.values(allSeats).reduce((sum, org) => sum + (org.total_seats || 0), 0).toString());
 };
 
 run();
