@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import momemt from 'moment';
 import { writeFileSync } from 'fs';
-import * as artifact from '@actions/artifact';
+import { DefaultArtifactClient } from '@actions/artifact'
 import { SummaryTableRow } from '@actions/core/lib/summary';
 import { Endpoints } from '@octokit/types';
 
@@ -100,29 +100,31 @@ const run = async (): Promise<void> => {
     organizations = input.org.split(',').map(org => org.trim());
   }
 
-  const getInactiveSeats = (seats: Seat[], inactiveDays: number): Seat[] => {
+  for (const org of organizations) {
+    const seatRsp = await octokit.paginate(octokit.rest.copilot.listCopilotSeats, { org });
+    if (!seatRsp.seats) {
+      core.warning(`No seats found for organization ${org}`);
+      continue;
+    }
+    
     const msToDays = (d: number): number => Math.ceil(d / (1000 * 3600 * 24));
     const now = new Date();
     
-    return seats.filter(seat => {
+    const inactiveSeats = seatRsp.seats.filter(seat => {
       if (seat.last_activity_at === null || seat.last_activity_at === undefined) {
         const created = new Date(seat.created_at);
         const diff = now.getTime() - created.getTime();
-        return msToDays(diff) > inactiveDays;
+        return msToDays(diff) > input.inactiveDays;
       }
       const lastActive = new Date(seat.last_activity_at);
       const diff = now.getTime() - lastActive.getTime();
-      return msToDays(diff) > inactiveDays;
-    });
-  };
+      return msToDays(diff) > input.inactiveDays;
+    }) || [];
 
-  for (const org of organizations) {
-    const seatRsp = await octokit.paginate(octokit.rest.copilot.listCopilotSeats, { org });
-    const inactiveSeats = await getInactiveSeats(seatRsp.seats || [], input.inactiveDays);
     allSeats[org] = {
       total_seats: seatRsp.total_seats,
-      seats: seatRsp.seats!,
-      inactive: inactiveSeats.map(seat => ({ ...seat, organization: org }))
+      seats: seatRsp.seats as Seat[],
+      inactive: inactiveSeats.map(seat => ({ ...seat, organization: org })) as SeatWithOrg[]
     };
 
     if (input.removeInactive) {
@@ -218,8 +220,8 @@ const run = async (): Promise<void> => {
         ])
       ].map(row => row.join(',')).join('\n');
       writeFileSync(fileName, csv);
-      const artifactClient = artifact.create();
-      await artifactClient.uploadArtifact(input.artifactName, [fileName], '.');
+      const artifact = new DefaultArtifactClient();
+      await artifact.uploadArtifact(input.artifactName, [fileName], '.');
     });
   }
 

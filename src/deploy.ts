@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { parse } from 'csv-parse/sync';
 import * as github from '@actions/github';
-import { Endpoints } from '@octokit/types';
+// import { Endpoints } from '@octokit/types';
 import { RequestError } from '@octokit/request-error';
 import { SummaryTableRow } from '@actions/core/lib/summary';
 type Octokit = ReturnType<typeof github.getOctokit>;
@@ -20,48 +20,48 @@ type UserList = {
 // Create a Map to store data per organization
 const orgData = new Map();  // Map<org, { seats: [], inactiveSeats: [] }>
 
-// Function to get all seats in an organization
-// Returns an array of seats 
-async function getOrgData(org: string, octokit: Octokit) {
-  const seats = await core.group('Fetching GitHub Copilot seats for ' + org, async () => {
+// // Function to get all seats in an organization
+// // Returns an array of seats 
+// async function getOrgData(org: string, octokit: Octokit) {
+//   const seats = await core.group('Fetching GitHub Copilot seats for ' + org, async () => {
 
-    // No type exists for copilot endpoint yet
-    let _seats: Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]['data']['seats'] = [], totalSeats = 0, page = 1;
-    try {
-      do {
-        try {
-          const response = await octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
-            org: org
-          });
-          totalSeats = response.data.total_seats;
-          _seats = _seats.concat(response.data.seats);
-          page++;
-        } catch (error) {
-          if (error instanceof RequestError && error.message === "Copilot Business is not enabled for this organization.") {
-            core.error((error as Error).message + ` (${org})`);
-            break;
-          } else if (error instanceof RequestError && error.status === 404) {
-            core.error((error as Error).message + ` (${org}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
-            break;
-          } else {
-            throw error;
-          }
-        }
-      } while (_seats.length < totalSeats);
-      core.info(`Found ${_seats.length} seats`)
-      core.debug(JSON.stringify(_seats, null, 2));
-    } finally {
-      // Close Actions core.group
-      core.endGroup();
-    }
-    return _seats;
-  });
+//     // No type exists for copilot endpoint yet
+//     let _seats: Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]['data']['seats'] = [], totalSeats = 0, page = 1;
+//     try {
+//       do {
+//         try {
+//           const response = await octokit.request(`GET /orgs/{org}/copilot/billing/seats?per_page=100&page=${page}`, {
+//             org: org
+//           });
+//           totalSeats = response.data.total_seats;
+//           _seats = _seats.concat(response.data.seats);
+//           page++;
+//         } catch (error) {
+//           if (error instanceof RequestError && error.message === "Copilot Business is not enabled for this organization.") {
+//             core.error((error as Error).message + ` (${org})`);
+//             break;
+//           } else if (error instanceof RequestError && error.status === 404) {
+//             core.error((error as Error).message + ` (${org}).  Please ensure that the organization has GitHub Copilot enabled and you are an org owner.`);
+//             break;
+//           } else {
+//             throw error;
+//           }
+//         }
+//       } while (_seats.length < totalSeats);
+//       core.info(`Found ${_seats.length} seats`)
+//       core.debug(JSON.stringify(_seats, null, 2));
+//     } finally {
+//       // Close Actions core.group
+//       core.endGroup();
+//     }
+//     return _seats;
+//   });
 
-  // Save seat data to the orgData Map by org id and then return seats
-  orgData.set(org, { seats: seats });
-  return seats;
+//   // Save seat data to the orgData Map by org id and then return seats
+//   orgData.set(org, { seats: seats });
+//   return seats;
 
-}
+// }
 
 export const deploy = async (input: {
   deployUsers: boolean,
