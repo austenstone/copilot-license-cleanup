@@ -101,9 +101,8 @@ const run = async (): Promise<void> => {
   }
 
   for (const org of organizations) {
-    const seatRsp = await octokit.paginate(octokit.rest.copilot.listCopilotSeats, { org });
-    core.debug(`Response: ${JSON.stringify(seatRsp)}`);
-    if (!seatRsp.seats) {
+    const seats = await octokit.paginate(octokit.rest.copilot.listCopilotSeats, { org }) as Seat[];
+    if (!seats) {
       core.warning(`No seats found for organization ${org}`);
       continue;
     }
@@ -111,7 +110,7 @@ const run = async (): Promise<void> => {
     const msToDays = (d: number): number => Math.ceil(d / (1000 * 3600 * 24));
     const now = new Date();
     
-    const inactiveSeats = seatRsp.seats.filter(seat => {
+    const inactiveSeats = seats.filter(seat => {
       if (seat.last_activity_at === null || seat.last_activity_at === undefined) {
         const created = new Date(seat.created_at);
         const diff = now.getTime() - created.getTime();
@@ -123,8 +122,8 @@ const run = async (): Promise<void> => {
     }) || [];
 
     allSeats[org] = {
-      total_seats: seatRsp.total_seats,
-      seats: seatRsp.seats as Seat[],
+      total_seats: seats.length,
+      seats: seats as Seat[],
       inactive: inactiveSeats.map(seat => ({ ...seat, organization: org })) as SeatWithOrg[]
     };
 
@@ -171,8 +170,8 @@ const run = async (): Promise<void> => {
 
     if (input.jobSummary) {
       await core.summary
-        .addHeading(`${org} - Inactive Seats: ${inactiveSeats.length} / ${seatRsp.total_seats}`)
-      if (seatRsp.seats?.length || 0 > 0) {
+        .addHeading(`${org} - Inactive Seats: ${inactiveSeats.length} / ${seats.length}`)
+      if (seats.length > 0) {
         core.summary.addTable([
           [
             { data: 'Avatar', header: true },
