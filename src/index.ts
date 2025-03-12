@@ -103,16 +103,12 @@ const run = async (): Promise<void> => {
   for (const org of organizations) {
     core.info(`Fetching Copilot seat assignments for organization ${input.org}`);
     const seatsRsp = await octokit.paginate(octokit.rest.copilot.listCopilotSeats, {
-      org: input.org
-    }) as { total_seats: number, seats: object[] }[];
+      org
+    }) as { total_seats: number, seats: Seat[] }[];
     const seats = {
       total_seats: seatsRsp[0]?.total_seats || 0,
-      // octokit paginate returns an array of objects (bug)
-      seats: (seatsRsp).reduce((acc, rsp) => acc.concat(rsp.seats as Seat[]), [] as Seat[])
+      seats: (seatsRsp).reduce((acc, rsp) => acc.concat(rsp.seats), [] as Seat[])
     };
-
-    console.log(`Seats for ${org}: ${JSON.stringify(seats)}`);
-
     if (!seats.seats || seats.seats.length === 0) {
       core.warning(`No seats found for organization ${org}`);
       continue;
