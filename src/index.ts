@@ -187,9 +187,9 @@ const run = async (): Promise<void> => {
             { data: 'Last Editor Used', header: true }
           ],
           ...inactiveSeats.sort((a, b) => {
-            const loginA = (a.assignee.login || 'Unknown') as string;
-            const loginB = (b.assignee.login || 'Unknown') as string;
-            return loginA.localeCompare(loginB);
+            const lastActivityA = new Date(a.last_activity_at || 0).getTime();
+            const lastActivityB = new Date(b.last_activity_at || 0).getTime();
+            return lastActivityA - lastActivityB;
           }).map(seat => [
             `<img src="${seat.assignee.avatar_url}" width="33" />`,
             seat.assignee.login || 'Unknown',
