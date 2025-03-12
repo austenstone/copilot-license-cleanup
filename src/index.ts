@@ -102,6 +102,7 @@ const run = async (): Promise<void> => {
 
   for (const org of organizations) {
     const seats = await octokit.paginate(octokit.rest.copilot.listCopilotSeats, { org }) as Seat[];
+    console.log(`Seats for ${org}: ${JSON.stringify(seats)}`);
     if (!seats) {
       core.warning(`No seats found for organization ${org}`);
       continue;
