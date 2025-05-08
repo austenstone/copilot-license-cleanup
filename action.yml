@@ -30,6 +30,10 @@ inputs:
     description: The number of days to consider a user inactive
     default: 90
     required: false
+  allowlist:
+    description: Comma-separated list of GitHub usernames to exempt from removal
+    default: ""
+    required: false
   job-summary:
     description: Whether to output a summary of the job
     default: true

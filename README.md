@@ -95,6 +95,7 @@ Various inputs are defined in [`action.yml`](action.yml):
 | remove | Whether to remove inactive users | false |
 | remove-from-team | Whether to remove inactive users from their assigning team | false |
 | inactive&#x2011;days | The number of days to consider a user inactive | 90 |
+| allowlist | Comma-separated list of GitHub usernames to exempt from removal. Ex: "user1,user2" | "" |
 | job-summary | Whether to output a summary of the job | true |
 | csv | Whether to output a CSV of inactive users | false |
 
