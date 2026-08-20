@@ -1,20 +1,32 @@
 name: Cleanup Copilot Licenses
+
+# Runs against a real organization, so it is never triggered by a push. Pushes
+# from forks and Dependabot cannot read secrets.TOKEN, which made every such
+# run fail.
 on:
-  push:
   workflow_dispatch:
+    inputs:
+      remove:
+        description: Actually remove inactive seats
+        type: boolean
+        default: false
   # schedule:
   #   - cron: '0 0 * * *'
+
+permissions:
+  contents: read
 
 jobs:
   copilot:
     name: Copilot Seats
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./
         with:
           github-token: ${{ secrets.TOKEN }}
           organization: ${{ vars.ORG }}
           inactive-days: 3
-          remove: false
+          remove: ${{ inputs.remove }}
           csv: true

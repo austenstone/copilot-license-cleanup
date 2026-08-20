@@ -1,0 +1,35 @@
+name: Update major version tag
+
+# Consumers pin to a major tag such as @v1. Without this the tag is created once
+# and never moves, so @v1 keeps serving whatever commit it was cut from.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  retag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Point the major tag at this release
+        env:
+          TAG: ${{ github.event.release.tag_name || github.ref_name }}
+        run: |
+          set -euo pipefail
+          major="${TAG%%.*}"
+          if ! echo "$major" | grep -qE '^v[0-9]+$'; then
+            echo "::notice::$TAG has no major version component; nothing to do."
+            exit 0
+          fi
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git tag -f "$major" "$TAG"
+          git push -f origin "refs/tags/$major"
+          echo "::notice::$major now points at $TAG"
