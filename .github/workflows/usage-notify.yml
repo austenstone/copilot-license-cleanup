@@ -15,7 +15,7 @@ jobs:
     outputs:
       inactive-logins: ${{ steps.copilot.outputs.inactive-logins }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./
         id: copilot
         with:
@@ -34,9 +34,10 @@ jobs:
       matrix:
         user: ${{ fromJson(needs.copilot.outputs.inactive-logins) }}
     steps:
-      - uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d # v2.0.0
+      - uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
-          channel-id: 'CHANNEL_ID,ANOTHER_CHANNEL_ID'
-          slack-message: 'Hey <@${{ matrix.user }}>, you have not used Copilot for 30 days. Please contact your manager to free up your seat.'
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: CHANNEL_ID
+            text: "Hey <@${{ matrix.user }}>, you have not used Copilot for 30 days. Please contact your manager to free up your seat."
