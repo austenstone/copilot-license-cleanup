@@ -13,10 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
-      inactive-seats: ${{ steps.copilot.outputs.inactive-seats }}
+      inactive-logins: ${{ steps.copilot.outputs.inactive-logins }}
     steps:
       - uses: actions/checkout@v5
       - uses: ./
+        id: copilot
         with:
           github-token: ${{ secrets.TOKEN }}
           organization: ${{ vars.ORG }}
@@ -26,10 +27,12 @@ jobs:
     name: Notify Inactive Users
     runs-on: ubuntu-latest
     needs: copilot
+    if: needs.copilot.outputs.inactive-logins != '[]'
     timeout-minutes: 10
     strategy:
+      fail-fast: false
       matrix:
-        user: ${{ fromJson(needs.copilot.outputs.inactive-seats) }}
+        user: ${{ fromJson(needs.copilot.outputs.inactive-logins) }}
     steps:
       - uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d # v2.0.0
         with:

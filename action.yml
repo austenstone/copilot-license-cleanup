@@ -61,7 +61,9 @@ inputs:
 
 outputs:
   inactive-seats:
-    description: JSON array of inactive seats
+    description: JSON object keyed by organization, each with total_seats, seats and inactive
+  inactive-logins:
+    description: JSON array of the inactive users' logins, suitable for a job matrix
   inactive-seat-count:
     description: The number of inactive seats
   removed-seats:

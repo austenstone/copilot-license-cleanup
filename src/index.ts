@@ -298,6 +298,7 @@ const run = async (): Promise<void> => {
   }
 
   core.setOutput('inactive-seats', JSON.stringify(allSeats));
+  core.setOutput('inactive-logins', JSON.stringify(inactive.map(getSeatLogin).filter(Boolean)));
   core.setOutput('inactive-seat-count', inactive.length.toString());
   core.setOutput('removed-seats', allRemovedSeatsCount.toString());
   core.setOutput(

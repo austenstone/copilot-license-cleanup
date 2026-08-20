@@ -88021,6 +88021,7 @@ const run = async () => {
         await core.group('Writing CSV', () => uploadCsv(inactive, input.artifactName));
     }
     core.setOutput('inactive-seats', JSON.stringify(allSeats));
+    core.setOutput('inactive-logins', JSON.stringify(inactive.map(seats_1.getSeatLogin).filter(Boolean)));
     core.setOutput('inactive-seat-count', inactive.length.toString());
     core.setOutput('removed-seats', allRemovedSeatsCount.toString());
     core.setOutput('seat-count', Object.values(allSeats)
