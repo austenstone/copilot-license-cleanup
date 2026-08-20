@@ -87914,9 +87914,11 @@ const removeSeatsFromTeams = async (octokit, org, seats) => {
         core.info(`${login} removed from team ${team.slug}`);
     }
 };
-const writeJobSummary = async (org, totalSeats, inactiveSeats) => {
+const writeJobSummary = async (org, totalSeats, inactiveSeats, rowBudget) => {
     core.summary.addHeading(`${org} - Inactive Seats: ${inactiveSeats.length} / ${totalSeats}`);
-    if (inactiveSeats.length > 0) {
+    const staleFirst = [...inactiveSeats].sort((a, b) => new Date(a.last_activity_at || 0).getTime() - new Date(b.last_activity_at || 0).getTime());
+    const { shown, omitted, remaining } = (0, seats_1.takeRows)(staleFirst, rowBudget);
+    if (shown.length > 0) {
         core.summary.addTable([
             [
                 { data: 'Avatar', header: true },
@@ -87924,10 +87926,7 @@ const writeJobSummary = async (org, totalSeats, inactiveSeats) => {
                 { data: 'Last Activity', header: true },
                 { data: 'Last Editor Used', header: true },
             ],
-            ...[...inactiveSeats]
-                .sort((a, b) => new Date(a.last_activity_at || 0).getTime() -
-                new Date(b.last_activity_at || 0).getTime())
-                .map((seat) => [
+            ...shown.map((seat) => [
                 `<img src="${seat.assignee?.avatar_url ?? ''}" width="33" />`,
                 (0, seats_1.getSeatLogin)(seat) ?? 'Unknown',
                 seat.last_activity_at ? (0, moment_1.default)(seat.last_activity_at).fromNow() : 'No activity',
@@ -87935,9 +87934,14 @@ const writeJobSummary = async (org, totalSeats, inactiveSeats) => {
             ]),
         ]);
     }
+    if (omitted > 0) {
+        core.info(`${org}: job summary table capped, ${omitted} inactive seat(s) not shown. Full list is in the CSV artifact.`);
+        core.summary.addRaw(`<p><em>${omitted} more inactive seat(s) not shown. GitHub discards a job summary over 1MiB, so the table is capped at ${seats_1.SUMMARY_MAX_TABLE_ROWS} rows per run. The full list is in the CSV artifact.</em></p>`, true);
+    }
     await core.summary
         .addLink('Manage GitHub Copilot seats', `https://github.com/organizations/${org}/settings/copilot/seat_management`)
         .write();
+    return remaining;
 };
 const uploadCsv = async (seats, artifactName) => {
     const sorted = [...seats].sort((a, b) => a.organization.localeCompare(b.organization) ||
@@ -87973,6 +87977,7 @@ const run = async () => {
     const allSeats = {};
     const failedOrgs = [];
     let allRemovedSeatsCount = 0;
+    let summaryRowBudget = seats_1.SUMMARY_MAX_TABLE_ROWS;
     const now = new Date();
     for (const org of organizations) {
         try {
@@ -88008,7 +88013,7 @@ const run = async () => {
                 }
             }
             if (input.jobSummary) {
-                await writeJobSummary(org, totalSeats, inactiveSeats);
+                summaryRowBudget = await writeJobSummary(org, totalSeats, inactiveSeats, summaryRowBudget);
             }
         }
         catch (error) {
@@ -88042,7 +88047,7 @@ run().catch((error) => core.setFailed(error.message));
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.parseInactiveDays = exports.parseOrganizations = exports.batch = exports.selectTeamAssignedSeats = exports.selectDirectlyAssignedSeats = exports.getSeatLogin = exports.isOrgTeam = exports.isSeatInactive = exports.daysSince = exports.REMOVAL_BATCH_SIZE = void 0;
+exports.takeRows = exports.SUMMARY_MAX_TABLE_ROWS = exports.parseInactiveDays = exports.parseOrganizations = exports.batch = exports.selectTeamAssignedSeats = exports.selectDirectlyAssignedSeats = exports.getSeatLogin = exports.isOrgTeam = exports.isSeatInactive = exports.daysSince = exports.REMOVAL_BATCH_SIZE = void 0;
 const MS_PER_DAY = 1000 * 3600 * 24;
 exports.REMOVAL_BATCH_SIZE = 50;
 const daysSince = (timestamp, now) => {
@@ -88094,6 +88099,16 @@ const parseInactiveDays = (raw) => {
     return days;
 };
 exports.parseInactiveDays = parseInactiveDays;
+exports.SUMMARY_MAX_TABLE_ROWS = 2000;
+const takeRows = (rows, remaining) => {
+    const shown = remaining > 0 ? rows.slice(0, remaining) : [];
+    return {
+        shown,
+        omitted: rows.length - shown.length,
+        remaining: Math.max(0, remaining - shown.length),
+    };
+};
+exports.takeRows = takeRows;
 
 
 /***/ }),

@@ -79,3 +79,23 @@ export const parseInactiveDays = (raw: string): number => {
   }
   return days;
 };
+
+/**
+ * GitHub silently discards an entire job summary larger than 1MiB, so an
+ * unbounded seat table costs you the whole report rather than the overflow.
+ * A rendered row measures ~187 bytes, and core.summary.write() appends, so the
+ * budget is shared across every organization in a run.
+ */
+export const SUMMARY_MAX_TABLE_ROWS = 2000;
+
+export const takeRows = <T>(
+  rows: T[],
+  remaining: number
+): { shown: T[]; omitted: number; remaining: number } => {
+  const shown = remaining > 0 ? rows.slice(0, remaining) : [];
+  return {
+    shown,
+    omitted: rows.length - shown.length,
+    remaining: Math.max(0, remaining - shown.length),
+  };
+};
