@@ -33,8 +33,11 @@ jobs:
           github-token: ${{ secrets.TOKEN }}
 ```
 
-#### Example Auto remove
-```yml
+### Dry run
+
+`remove` and `remove-from-team` both default to `false`, so the default configuration only reports. It logs how many seats it *would* remove and still populates every output, which makes it safe to schedule while you decide on a threshold. Nothing is removed until you opt in.
+
+#### Example Auto remove```yml
       - uses: austenstone/copilot-license-cleanup@v1.5
         with:
           github-token: ${{ secrets.TOKEN }}
@@ -97,11 +100,19 @@ Various inputs are defined in [`action.yml`](action.yml):
 | inactive&#x2011;days | The number of days to consider a user inactive | 90 |
 | job-summary | Whether to output a summary of the job | true |
 | csv | Whether to output a CSV of inactive users | false |
+| artifact&#x2011;name | Name of the artifact holding the CSV | inactive-seats |
+
+> [!NOTE]
+> The `github-token` default of `${{ github.token }}` is not sufficient. The built-in `GITHUB_TOKEN` cannot read the Copilot billing API, so you must pass a PAT as described above.
+
+> [!WARNING]
+> `remove-from-team` removes the user from the team that assigned their seat. That team may grant repository access far beyond Copilot, so the blast radius is larger than reclaiming a licence. `remove` only touches the Copilot seat.
 
 ## ⬅️ Outputs
 | Name | Description |
 | --- | - |
-| inactive-seats | JSON array of inactive seats |
+| inactive-seats | JSON object keyed by organization, each with `total_seats`, `seats` and `inactive` |
+| inactive-logins | JSON array of the inactive users' logins, suitable for a job matrix |
 | inactive-seat-count | The number of inactive seats |
 | removed-seats | The number of seats removed |
 | seat-count | The total number of seats |
