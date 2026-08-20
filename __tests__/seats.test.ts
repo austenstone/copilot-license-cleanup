@@ -103,6 +103,15 @@ describe('getSeatLogin', () => {
     expect(getSeatLogin({} as Seat)).toBeUndefined();
     expect(getSeatLogin({ assignee: { login: '' } } as Seat)).toBeUndefined();
   });
+
+  it('produces a flat login array a job matrix can consume', () => {
+    const seats = [
+      seat(),
+      { assignee: null } as Seat,
+      seat({ assignee: { login: 'hubot' } as Seat['assignee'] }),
+    ];
+    expect(seats.map(getSeatLogin).filter(Boolean)).toEqual(['octocat', 'hubot']);
+  });
 });
 
 describe('selectDirectlyAssignedSeats', () => {
