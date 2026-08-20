@@ -10,6 +10,8 @@ import {
   selectTeamAssignedSeats,
   AssigningTeam,
   Seat,
+  SUMMARY_MAX_TABLE_ROWS,
+  takeRows,
 } from '../src/seats';
 
 const NOW = new Date('2026-08-20T00:00:00Z');
@@ -163,5 +165,41 @@ describe('parseInactiveDays', () => {
     for (const raw of ['', 'abc', '0', '-1', '1.5']) {
       expect(() => parseInactiveDays(raw)).toThrow();
     }
+  });
+});
+
+describe('takeRows', () => {
+  const rows = Array.from({ length: 10 }, (_, i) => i);
+
+  it('returns everything when the budget is larger than the row count', () => {
+    expect(takeRows(rows, 100)).toEqual({ shown: rows, omitted: 0, remaining: 90 });
+  });
+
+  it('caps the rows and reports how many were omitted', () => {
+    const { shown, omitted, remaining } = takeRows(rows, 4);
+    expect(shown).toEqual([0, 1, 2, 3]);
+    expect(omitted).toBe(6);
+    expect(remaining).toBe(0);
+  });
+
+  it('shows nothing once the budget is spent', () => {
+    expect(takeRows(rows, 0)).toEqual({ shown: [], omitted: 10, remaining: 0 });
+  });
+
+  it('never reports a negative budget', () => {
+    expect(takeRows(rows, -5).remaining).toBe(0);
+  });
+
+  it('shares the budget across successive organizations', () => {
+    const first = takeRows(rows, 12);
+    const second = takeRows(rows, first.remaining);
+    expect(second.shown).toHaveLength(2);
+    expect(second.omitted).toBe(8);
+    expect(second.remaining).toBe(0);
+  });
+
+  it('keeps a full run of large organizations under the 1MiB summary limit', () => {
+    const bytesPerRow = 187;
+    expect(SUMMARY_MAX_TABLE_ROWS * bytesPerRow).toBeLessThan(1024 * 1024);
   });
 });

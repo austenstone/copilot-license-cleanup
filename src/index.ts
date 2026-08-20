@@ -7,7 +7,9 @@ import {
   Seat,
   SeatWithOrg,
   REMOVAL_BATCH_SIZE,
+  SUMMARY_MAX_TABLE_ROWS,
   batch,
+  takeRows,
   getSeatLogin,
   isOrgTeam,
   isSeatInactive,
@@ -150,11 +152,18 @@ const removeSeatsFromTeams = async (octokit: Octokit, org: string, seats: Seat[]
 const writeJobSummary = async (
   org: string,
   totalSeats: number,
-  inactiveSeats: Seat[]
-): Promise<void> => {
+  inactiveSeats: Seat[],
+  rowBudget: number
+): Promise<number> => {
   core.summary.addHeading(`${org} - Inactive Seats: ${inactiveSeats.length} / ${totalSeats}`);
 
-  if (inactiveSeats.length > 0) {
+  const staleFirst = [...inactiveSeats].sort(
+    (a, b) =>
+      new Date(a.last_activity_at || 0).getTime() - new Date(b.last_activity_at || 0).getTime()
+  );
+  const { shown, omitted, remaining } = takeRows(staleFirst, rowBudget);
+
+  if (shown.length > 0) {
     core.summary.addTable([
       [
         { data: 'Avatar', header: true },
@@ -162,22 +171,26 @@ const writeJobSummary = async (
         { data: 'Last Activity', header: true },
         { data: 'Last Editor Used', header: true },
       ],
-      ...[...inactiveSeats]
-        .sort(
-          (a, b) =>
-            new Date(a.last_activity_at || 0).getTime() -
-            new Date(b.last_activity_at || 0).getTime()
-        )
-        .map(
-          (seat) =>
-            [
-              `<img src="${seat.assignee?.avatar_url ?? ''}" width="33" />`,
-              getSeatLogin(seat) ?? 'Unknown',
-              seat.last_activity_at ? moment(seat.last_activity_at).fromNow() : 'No activity',
-              seat.last_activity_editor || 'Unknown',
-            ] as SummaryTableRow
-        ),
+      ...shown.map(
+        (seat) =>
+          [
+            `<img src="${seat.assignee?.avatar_url ?? ''}" width="33" />`,
+            getSeatLogin(seat) ?? 'Unknown',
+            seat.last_activity_at ? moment(seat.last_activity_at).fromNow() : 'No activity',
+            seat.last_activity_editor || 'Unknown',
+          ] as SummaryTableRow
+      ),
     ]);
+  }
+
+  if (omitted > 0) {
+    core.info(
+      `${org}: job summary table capped, ${omitted} inactive seat(s) not shown. Full list is in the CSV artifact.`
+    );
+    core.summary.addRaw(
+      `<p><em>${omitted} more inactive seat(s) not shown. GitHub discards a job summary over 1MiB, so the table is capped at ${SUMMARY_MAX_TABLE_ROWS} rows per run. The full list is in the CSV artifact.</em></p>`,
+      true
+    );
   }
 
   await core.summary
@@ -186,6 +199,8 @@ const writeJobSummary = async (
       `https://github.com/organizations/${org}/settings/copilot/seat_management`
     )
     .write();
+
+  return remaining;
 };
 
 const uploadCsv = async (seats: SeatWithOrg[], artifactName: string): Promise<void> => {
@@ -235,6 +250,7 @@ const run = async (): Promise<void> => {
     {};
   const failedOrgs: string[] = [];
   let allRemovedSeatsCount = 0;
+  let summaryRowBudget = SUMMARY_MAX_TABLE_ROWS;
   const now = new Date();
 
   for (const org of organizations) {
@@ -283,7 +299,12 @@ const run = async (): Promise<void> => {
       }
 
       if (input.jobSummary) {
-        await writeJobSummary(org, totalSeats, inactiveSeats);
+        summaryRowBudget = await writeJobSummary(
+          org,
+          totalSeats,
+          inactiveSeats,
+          summaryRowBudget
+        );
       }
     } catch (error) {
       failedOrgs.push(org);
