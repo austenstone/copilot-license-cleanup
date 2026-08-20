@@ -8,17 +8,30 @@ on:
     paths-ignore:
       - "**.md"
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup Node.js
-        uses: actions/setup-node@v4
-      - run: npm install
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
       - run: npm run lint
-        continue-on-error: true
-      - run: npm run build
+      - run: npm run typecheck
       - run: npm test
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+      - run: npm run build
+      # The committed bundle is what consumers actually run, so a source change
+      # that never reached dist/ ships nothing.
+      - name: Verify dist/ matches source
+        run: |
+          if ! git diff --exit-code --stat -- dist/; then
+            echo "::error::dist/ is out of date. Run 'npm run build' and commit the result."
+            exit 1
+          fi

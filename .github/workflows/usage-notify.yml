@@ -4,14 +4,18 @@ on:
   # schedule:
   #   - cron: "0 0 * * *"
 
+permissions:
+  contents: read
+
 jobs:
   copilot:
     name: Copilot Seats
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     outputs:
       inactive-seats: ${{ steps.copilot.outputs.inactive-seats }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./
         with:
           github-token: ${{ secrets.TOKEN }}
@@ -22,11 +26,12 @@ jobs:
     name: Notify Inactive Users
     runs-on: ubuntu-latest
     needs: copilot
+    timeout-minutes: 10
     strategy:
       matrix:
         user: ${{ fromJson(needs.copilot.outputs.inactive-seats) }}
     steps:
-      - uses: slackapi/slack-github-action@v2.0.0
+      - uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d # v2.0.0
         with:
           channel-id: 'CHANNEL_ID,ANOTHER_CHANNEL_ID'
           slack-message: 'Hey <@${{ matrix.user }}>, you have not used Copilot for 30 days. Please contact your manager to free up your seat.'

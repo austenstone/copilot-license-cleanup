@@ -3,7 +3,8 @@
     /* Basic Options */
     // "incremental": true,                   /* Enable incremental compilation */
     "target": "ES2022",                       /* Specify ECMAScript target version: 'ES3' (default), 'ES5', 'ES2015', 'ES2016', 'ES2017', 'ES2018', 'ES2019' or 'ESNEXT'. */
-    "lib": ["ES2022"],                        /* Specify library files to be included in the compilation. */
+    "lib": ["ES2022", "DOM"],                 /* Specify library files to be included in the compilation. */
+    "types": ["node", "jest"],                /* Type packages to include without being referenced in a source file. */
     "module": "nodenext",                     /* Specify module code generation: 'none', 'commonjs', 'amd', 'system', 'umd', 'es2015', or 'ESNext'. */
     // "allowJs": true,                       /* Allow javascript files to be compiled. */
     // "checkJs": true,                       /* Report errors in .js files. */
@@ -34,8 +35,7 @@
     "noUnusedLocals": true,                   /* Report errors on unused locals. */
     "noUnusedParameters": true,               /* Report errors on unused parameters. */
     "noImplicitReturns": true,                /* Report error when not all code paths in function return a value. */
-    "noFallthroughCasesInSwitch": true,       /* Report errors for fallthnpm i -g @vercel/ncc
-    rough cases in switch statement. */
+    "noFallthroughCasesInSwitch": true,       /* Report errors for fallthrough cases in switch statement. */
     /* Module Resolution Options */
     "moduleResolution": "nodenext",           /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (TypeScript pre-1.6). */
     // "baseUrl": "./",                       /* Base directory to resolve non-absolute module names. */
@@ -57,7 +57,6 @@
     // "emitDecoratorMetadata": true,         /* Enables experimental support for emitting type metadata for decorators. */
   },
   "exclude": [
-    "src/deploy.ts",
     "node_modules",
     "__tests__",
     "__mocks__",
