@@ -45,6 +45,5 @@
   },
   "overrides": {
     "undici": "^6.28.0"
-  },
-  "type": "module"
+  }
 }
