@@ -28,10 +28,13 @@ jobs:
       - run: npm test
       - run: npm run build
       # The committed bundle is what consumers actually run, so a source change
-      # that never reached dist/ ships nothing.
+      # that never reached dist/ ships nothing. git diff alone misses files the
+      # bundler newly emits, so untracked output has to fail the build too.
       - name: Verify dist/ matches source
         run: |
-          if ! git diff --exit-code --stat -- dist/; then
+          if [ -n "$(git status --porcelain -- dist/)" ]; then
             echo "::error::dist/ is out of date. Run 'npm run build' and commit the result."
+            git status --porcelain -- dist/
+            git diff -- dist/ | head -50
             exit 1
           fi
